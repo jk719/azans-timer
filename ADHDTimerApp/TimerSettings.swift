@@ -73,6 +73,18 @@ class TimerSettings: ObservableObject {
         }
     }
 
+    // Child's name for personalization
+    @Published var childName: String {
+        didSet {
+            UserDefaults.standard.set(childName, forKey: "childName")
+        }
+    }
+
+    // Check if onboarding has been completed
+    var hasCompletedOnboarding: Bool {
+        !childName.isEmpty
+    }
+
     // Parent verification PIN
     @Published var parentPIN: String? {
         didSet {
@@ -140,6 +152,7 @@ class TimerSettings: ObservableObject {
         self.showerTime = UserDefaults.standard.object(forKey: "showerTime") as? Int ?? 10
         self.homeworkTime = UserDefaults.standard.object(forKey: "homeworkTime") as? Int ?? 15
         self.tickSoundEnabled = UserDefaults.standard.object(forKey: "tickSoundEnabled") as? Bool ?? false
+        self.childName = UserDefaults.standard.string(forKey: "childName") ?? ""
         self.parentPIN = UserDefaults.standard.string(forKey: "parentPIN")
 
         // Load session history

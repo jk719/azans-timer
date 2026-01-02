@@ -18,6 +18,7 @@ struct ContentView: View {
     @State private var showingPINSetup = false
     @State private var showingPINSetupFromPrompt = false  // PIN setup triggered from completion prompt
     @State private var enteredPIN: String = ""
+    @State private var showingOnboarding = false
 
     enum ActivityType {
         case ipad, reading, shower, homework
@@ -164,6 +165,15 @@ struct ContentView: View {
                 viewModel.completePINSetup()
             })
         }
+        .fullScreenCover(isPresented: $showingOnboarding) {
+            OnboardingView(isPresented: $showingOnboarding)
+        }
+        .onAppear {
+            // Show onboarding if child name not set
+            if !settings.hasCompletedOnboarding {
+                showingOnboarding = true
+            }
+        }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             // Update pause display
             if viewModel.pausedAt != nil {
@@ -219,7 +229,7 @@ struct ContentView: View {
                             value: floatingOffset
                         )
 
-                    Text("Azan's Timer")
+                    Text("\(settings.childName)'s Timer")
                         .font(.system(size: 40, weight: .black, design: .rounded))
                         .minimumScaleFactor(0.5)
                         .lineLimit(1)
@@ -854,6 +864,7 @@ struct ContentView: View {
     private var settingsSheet: some View {
         SettingsSheetView(
             tickSoundEnabled: $settings.tickSoundEnabled,
+            childName: $settings.childName,
             isVerificationEnabled: settings.isVerificationEnabled,
             onTimeGameTap: {
                 showingSettings = false
@@ -2338,12 +2349,15 @@ struct FloatingDecorationsView: View {
 // MARK: - Settings Sheet View (Fun & Engaging)
 struct SettingsSheetView: View {
     @Binding var tickSoundEnabled: Bool
+    @Binding var childName: String
     let isVerificationEnabled: Bool
     let onTimeGameTap: () -> Void
     let onPINSetupTap: () -> Void
     let onDone: () -> Void
 
     @State private var isAnimating = false
+    @State private var editingName: String = ""
+    @State private var isEditingName = false
 
     var body: some View {
         NavigationView {
@@ -2400,6 +2414,90 @@ struct SettingsSheetView: View {
                                 .foregroundColor(.white)
                         }
                         .padding(.top, 10)
+
+                        // Profile Card
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.circle.fill")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(.pink)
+                                Text("Profile")
+                                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
+                            }
+
+                            if isEditingName {
+                                HStack(spacing: 12) {
+                                    TextField("Name", text: $editingName)
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundColor(.white)
+                                        .padding(.vertical, 12)
+                                        .padding(.horizontal, 16)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(Color.white.opacity(0.15))
+                                        )
+
+                                    Button(action: {
+                                        let trimmed = editingName.trimmingCharacters(in: .whitespacesAndNewlines)
+                                        if !trimmed.isEmpty {
+                                            childName = trimmed
+                                        }
+                                        isEditingName = false
+                                    }) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .font(.system(size: 32))
+                                            .foregroundColor(.green)
+                                    }
+
+                                    Button(action: {
+                                        isEditingName = false
+                                    }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .font(.system(size: 32))
+                                            .foregroundColor(.red.opacity(0.7))
+                                    }
+                                }
+                            } else {
+                                Button(action: {
+                                    editingName = childName
+                                    isEditingName = true
+                                }) {
+                                    HStack(spacing: 12) {
+                                        ZStack {
+                                            Circle()
+                                                .fill(Color.pink.opacity(0.2))
+                                                .frame(width: 44, height: 44)
+                                            Text(String(childName.prefix(1)).uppercased())
+                                                .font(.system(size: 20, weight: .bold))
+                                                .foregroundColor(.pink)
+                                        }
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(childName)
+                                                .font(.system(size: 17, weight: .semibold))
+                                                .foregroundColor(.white)
+                                            Text("Tap to change name")
+                                                .font(.system(size: 13))
+                                                .foregroundColor(.white.opacity(0.6))
+                                        }
+                                        Spacer()
+                                        Image(systemName: "pencil.circle.fill")
+                                            .font(.system(size: 24))
+                                            .foregroundColor(.white.opacity(0.5))
+                                    }
+                                }
+                            }
+                        }
+                        .padding(20)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(Color.white.opacity(0.1))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                                )
+                        )
+                        .padding(.horizontal, 20)
 
                         // Sound Settings Card
                         VStack(alignment: .leading, spacing: 16) {
@@ -2812,6 +2910,194 @@ struct EnhancedSessionRow: View {
             RoundedRectangle(cornerRadius: 14)
                 .fill(Color.white.opacity(0.08))
         )
+    }
+}
+
+// MARK: - Onboarding View
+struct OnboardingView: View {
+    @Binding var isPresented: Bool
+    @ObservedObject private var settings = TimerSettings.shared
+    @State private var childName: String = ""
+    @State private var isAnimating = false
+    @FocusState private var isTextFieldFocused: Bool
+
+    var isNameEmpty: Bool {
+        childName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var body: some View {
+        ZStack {
+            // Fun gradient background
+            LinearGradient(
+                colors: [
+                    Color(red: 0.4, green: 0.3, blue: 0.9),
+                    Color(red: 0.6, green: 0.3, blue: 0.85),
+                    Color(red: 0.5, green: 0.4, blue: 0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            // Floating decorations
+            FloatingDecorationsView(isAnimating: isAnimating)
+
+            VStack(spacing: 30) {
+                Spacer()
+
+                // Welcome header
+                VStack(spacing: 16) {
+                    ZStack {
+                        // Glow circles
+                        ForEach(0..<3) { index in
+                            Circle()
+                                .fill(Color.white.opacity(0.08))
+                                .frame(width: CGFloat(140 + index * 25), height: CGFloat(140 + index * 25))
+                                .scaleEffect(isAnimating ? 1.1 : 0.95)
+                                .animation(
+                                    Animation.easeInOut(duration: 1.5)
+                                        .repeatForever(autoreverses: true)
+                                        .delay(Double(index) * 0.2),
+                                    value: isAnimating
+                                )
+                        }
+
+                        Image(systemName: "timer.circle.fill")
+                            .font(.system(size: 80, weight: .medium))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.yellow, .orange],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .shadow(color: .orange.opacity(0.5), radius: 20, x: 0, y: 10)
+                            .scaleEffect(isAnimating ? 1.1 : 0.95)
+                            .rotationEffect(.degrees(isAnimating ? 5 : -5))
+                            .animation(
+                                Animation.easeInOut(duration: 1.2)
+                                    .repeatForever(autoreverses: true),
+                                value: isAnimating
+                            )
+                    }
+
+                    Text("Welcome!")
+                        .font(.system(size: 42, weight: .black, design: .rounded))
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
+
+                    Text("Let's set up your timer")
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white.opacity(0.8))
+                }
+
+                // Name input card
+                VStack(spacing: 20) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "person.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.cyan, .blue],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                        Text("What's your name?")
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+
+                    TextField("Type your name...", text: $childName)
+                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.vertical, 18)
+                        .padding(.horizontal, 24)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(Color.white.opacity(0.15))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .stroke(
+                                            LinearGradient(
+                                                colors: [.white.opacity(0.6), .white.opacity(0.2)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 2
+                                        )
+                                )
+                        )
+                        .focused($isTextFieldFocused)
+                        .autocorrectionDisabled()
+                }
+                .padding(.horizontal, 28)
+                .padding(.vertical, 28)
+                .background(
+                    RoundedRectangle(cornerRadius: 28)
+                        .fill(Color.white.opacity(0.1))
+                )
+                .padding(.horizontal, 24)
+
+                // Let's Go button
+                Button(action: {
+                    let name = childName.trimmingCharacters(in: .whitespacesAndNewlines)
+                    settings.childName = name
+                    isPresented = false
+                }) {
+                    HStack(spacing: 12) {
+                        Text("Let's Go!")
+                            .font(.system(size: 26, weight: .black, design: .rounded))
+                        Image(systemName: "arrow.right.circle.fill")
+                            .font(.system(size: 26, weight: .bold))
+                    }
+                    .foregroundColor(isNameEmpty ? .white.opacity(0.4) : .white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 22)
+                            .fill(
+                                LinearGradient(
+                                    colors: isNameEmpty
+                                        ? [Color.white.opacity(0.1), Color.white.opacity(0.1)]
+                                        : [Color.green, Color.green.opacity(0.7)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22)
+                            .stroke(Color.white.opacity(isNameEmpty ? 0.2 : 0.5), lineWidth: 3)
+                    )
+                    .shadow(color: isNameEmpty ? .clear : .green.opacity(0.4), radius: 15, x: 0, y: 8)
+                }
+                .disabled(isNameEmpty)
+                .padding(.horizontal, 24)
+                .scaleEffect(isNameEmpty ? 1.0 : (isAnimating ? 1.02 : 0.98))
+                .animation(
+                    isNameEmpty ? nil : Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true),
+                    value: isAnimating
+                )
+
+                if isNameEmpty {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.system(size: 16))
+                        Text("Enter your name to continue")
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    }
+                    .foregroundColor(.white.opacity(0.6))
+                }
+
+                Spacer()
+                Spacer()
+            }
+        }
+        .onAppear {
+            isAnimating = true
+        }
     }
 }
 
