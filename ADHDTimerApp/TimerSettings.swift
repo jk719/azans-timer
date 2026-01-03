@@ -107,6 +107,52 @@ class TimerSettings: ObservableObject {
         }
     }
 
+    // Stars reward system
+    @Published var totalStars: Int {
+        didSet {
+            UserDefaults.standard.set(totalStars, forKey: "totalStars")
+        }
+    }
+
+    // Tutorial tracking
+    @Published var hasSeenClockBadgeTip: Bool {
+        didSet { UserDefaults.standard.set(hasSeenClockBadgeTip, forKey: "hasSeenClockBadgeTip") }
+    }
+
+    @Published var hasSeenStarsTip: Bool {
+        didSet { UserDefaults.standard.set(hasSeenStarsTip, forKey: "hasSeenStarsTip") }
+    }
+
+    @Published var hasSeenHistoryTip: Bool {
+        didSet { UserDefaults.standard.set(hasSeenHistoryTip, forKey: "hasSeenHistoryTip") }
+    }
+
+    @Published var hasSeenDoneButtonTip: Bool {
+        didSet { UserDefaults.standard.set(hasSeenDoneButtonTip, forKey: "hasSeenDoneButtonTip") }
+    }
+
+    // Reset all tutorial flags (for replay)
+    func resetTutorials() {
+        hasSeenClockBadgeTip = false
+        hasSeenStarsTip = false
+        hasSeenHistoryTip = false
+        hasSeenDoneButtonTip = false
+    }
+
+    // Streak multiplier for bonus stars
+    var streakMultiplier: Double {
+        if currentStreak >= 7 { return 2.0 }
+        if currentStreak >= 3 { return 1.5 }
+        return 1.0
+    }
+
+    // Award stars with streak multiplier applied
+    func awardStars(baseAmount: Int) -> Int {
+        let total = Int(Double(baseAmount) * streakMultiplier)
+        totalStars += total
+        return total
+    }
+
     @Published var sessionHistory: [TimerSession] {
         didSet {
             if let encoded = try? JSONEncoder().encode(sessionHistory) {
@@ -162,6 +208,13 @@ class TimerSettings: ObservableObject {
         self.childName = UserDefaults.standard.string(forKey: "childName") ?? ""
         self.parentPIN = UserDefaults.standard.string(forKey: "parentPIN")
         self.skipPINSetupPermanently = UserDefaults.standard.bool(forKey: "skipPINSetupPermanently")
+        self.totalStars = UserDefaults.standard.integer(forKey: "totalStars")
+
+        // Tutorial tracking
+        self.hasSeenClockBadgeTip = UserDefaults.standard.bool(forKey: "hasSeenClockBadgeTip")
+        self.hasSeenStarsTip = UserDefaults.standard.bool(forKey: "hasSeenStarsTip")
+        self.hasSeenHistoryTip = UserDefaults.standard.bool(forKey: "hasSeenHistoryTip")
+        self.hasSeenDoneButtonTip = UserDefaults.standard.bool(forKey: "hasSeenDoneButtonTip")
 
         // Load session history
         if let data = UserDefaults.standard.data(forKey: "sessionHistory"),

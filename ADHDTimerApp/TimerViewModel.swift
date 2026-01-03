@@ -10,6 +10,37 @@ enum MilestoneType: Equatable {
     case custom(String)
 }
 
+// Quality rating for parent verification
+enum TaskRating: Int {
+    case amazing = 15
+    case good = 10
+    case needsWork = 5
+
+    var title: String {
+        switch self {
+        case .amazing: return "Amazing!"
+        case .good: return "Good Job!"
+        case .needsWork: return "Needs Work"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .amazing: return "🌟"
+        case .good: return "⭐"
+        case .needsWork: return "💪"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .amazing: return "Perfect focus"
+        case .good: return "Task completed"
+        case .needsWork: return "Room to improve"
+        }
+    }
+}
+
 @MainActor
 class TimerViewModel: ObservableObject {
     @Published var timeRemaining: Int = 0
@@ -30,6 +61,8 @@ class TimerViewModel: ObservableObject {
     @Published var completionMessage: String = ""
     @Published var timeSavedSeconds: Int? = nil
     @Published var showPINSetupPrompt: Bool = false  // Prompt to set up PIN after first completion
+    @Published var showQualityRating: Bool = false  // Show quality rating after PIN verification
+    @Published var lastEarnedStars: Int = 0  // Stars earned from last completion
     private var pendingSession: (activity: String, icon: String, allocatedTime: Int, actualTime: Int)?
 
     // Track time for early completion
@@ -309,7 +342,18 @@ class TimerViewModel: ObservableObject {
 
     func confirmVerification() {
         awaitingVerification = false
+        // Show quality rating screen instead of immediately saving
+        showQualityRating = true
+    }
+
+    // Called when parent selects a quality rating
+    func confirmVerificationWithRating(_ rating: TaskRating) {
+        showQualityRating = false
         isVerified = true
+
+        // Award stars based on rating with streak multiplier
+        lastEarnedStars = settings.awardStars(baseAmount: rating.rawValue)
+
         saveCompletedSession()
     }
 

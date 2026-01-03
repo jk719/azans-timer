@@ -1,5 +1,26 @@
 import SwiftUI
 
+// Tutorial step enum - defined outside ContentView so other views can access it
+enum TutorialStep: Int {
+    case startTimer = 1      // Tap activity to start
+    case clockBadge = 2      // Tap clock badge to customize
+    case customTimer = 3     // Tap center custom button
+    case starsBadge = 4      // Tap stars badge
+    case streakBadge = 5     // Tap streak badge (conditional)
+    case doneButton = 6      // Tap "I'm Done!" button
+    case historyButton = 7   // Tap history button
+    case settingsButton = 8  // Tap settings button
+    case pinSetupRow = 9     // Inside Settings - highlight PIN setup
+}
+
+enum TutorialMessagePosition {
+    case top, bottom
+}
+
+enum ActivityType {
+    case ipad, reading, shower, homework
+}
+
 struct ContentView: View {
     @StateObject private var viewModel = TimerViewModel()
     @StateObject private var settings = TimerSettings.shared
@@ -20,9 +41,9 @@ struct ContentView: View {
     @State private var showingOnboarding = false
     @State private var showingCancelConfirm = false
 
-    enum ActivityType {
-        case ipad, reading, shower, homework
-    }
+    // Interactive tutorial state
+    @State private var activeTutorialStep: TutorialStep? = nil
+    @State private var tutorialPulse: Bool = false
 
     var body: some View {
         ZStack {
@@ -37,15 +58,74 @@ struct ContentView: View {
             VStack(spacing: 0) {
                 // Top bar with settings and history
                 HStack {
-                    Button(action: { showingHistory = true }) {
+                    Button(action: {
+                        if activeTutorialStep == .historyButton {
+                            // Tutorial mode - advance to settings button
+                            settings.hasSeenHistoryTip = true
+                            withAnimation {
+                                activeTutorialStep = .settingsButton
+                            }
+                        } else if activeTutorialStep == nil {
+                            // Normal mode
+                            showingHistory = true
+                        }
+                        // During other tutorial steps, do nothing
+                    }) {
                         Image(systemName: "chart.bar.fill")
                             .font(.system(size: 22, weight: .semibold))
                             .foregroundColor(.white.opacity(0.8))
                             .padding(12)
                             .background(Circle().fill(Color.white.opacity(0.15)))
                     }
+                    .background(
+                        Group {
+                            if activeTutorialStep == .historyButton {
+                                Circle()
+                                    .stroke(Color.purple, lineWidth: 4)
+                                    .shadow(color: .purple, radius: 12)
+                                    .scaleEffect(tutorialPulse ? 1.3 : 1.15)
+                            }
+                        }
+                    )
+                    .zIndex(activeTutorialStep == .historyButton ? 100 : 0)
 
                     Spacer()
+
+                    // Stars badge
+                    HStack(spacing: 4) {
+                        Image(systemName: "star.fill")
+                            .foregroundColor(.yellow)
+                        Text("\(settings.totalStars)")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(Color.white.opacity(0.15)))
+                    .background(
+                        Group {
+                            if activeTutorialStep == .starsBadge {
+                                Capsule()
+                                    .stroke(Color.yellow, lineWidth: 4)
+                                    .shadow(color: .yellow, radius: 12)
+                                    .scaleEffect(tutorialPulse ? 1.25 : 1.1)
+                            }
+                        }
+                    )
+                    .onTapGesture {
+                        if activeTutorialStep == .starsBadge {
+                            withAnimation {
+                                settings.hasSeenStarsTip = true
+                                // If user has a streak, go to streak badge, otherwise go to done button
+                                if settings.currentStreak > 0 {
+                                    activeTutorialStep = .streakBadge
+                                } else {
+                                    activeTutorialStep = .doneButton
+                                }
+                            }
+                        }
+                    }
+                    .zIndex(activeTutorialStep == .starsBadge ? 100 : 0)
 
                     // Streak badge
                     if settings.currentStreak > 0 {
@@ -59,17 +139,58 @@ struct ContentView: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(Capsule().fill(Color.white.opacity(0.15)))
+                        .background(
+                            Group {
+                                if activeTutorialStep == .streakBadge {
+                                    Capsule()
+                                        .stroke(Color.orange, lineWidth: 4)
+                                        .shadow(color: .orange, radius: 12)
+                                        .scaleEffect(tutorialPulse ? 1.25 : 1.1)
+                                }
+                            }
+                        )
+                        .onTapGesture {
+                            if activeTutorialStep == .streakBadge {
+                                withAnimation {
+                                    activeTutorialStep = .doneButton
+                                }
+                            }
+                        }
+                        .zIndex(activeTutorialStep == .streakBadge ? 100 : 0)
                     }
 
                     Spacer()
 
-                    Button(action: { showingSettings = true }) {
+                    Button(action: {
+                        // Tutorial step 8: Settings button
+                        if activeTutorialStep == .settingsButton {
+                            showingSettings = true
+                            withAnimation {
+                                activeTutorialStep = .pinSetupRow
+                            }
+                            return
+                        }
+                        // Block during other tutorial steps
+                        guard activeTutorialStep == nil else { return }
+                        showingSettings = true
+                    }) {
                         Image(systemName: "gearshape.fill")
                             .font(.system(size: 22, weight: .semibold))
                             .foregroundColor(.white.opacity(0.8))
                             .padding(12)
                             .background(Circle().fill(Color.white.opacity(0.15)))
                     }
+                    .background(
+                        Group {
+                            if activeTutorialStep == .settingsButton {
+                                Circle()
+                                    .stroke(Color.gray, lineWidth: 4)
+                                    .shadow(color: .gray, radius: 12)
+                                    .scaleEffect(tutorialPulse ? 1.3 : 1.15)
+                            }
+                        }
+                    )
+                    .zIndex(activeTutorialStep == .settingsButton ? 100 : 0)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
@@ -84,13 +205,18 @@ struct ContentView: View {
                                 .padding(.top, 10)
                         }
 
-                        if !viewModel.isRunning && viewModel.timeRemaining == 0 && viewModel.totalTime == 0 {
+                        // Show presetButtons when idle OR during tutorial steps that need it
+                        let tutorialNeedsPresetButtons = activeTutorialStep == .startTimer ||
+                                                          activeTutorialStep == .clockBadge ||
+                                                          activeTutorialStep == .customTimer
+                        if (!viewModel.isRunning && viewModel.timeRemaining == 0 && viewModel.totalTime == 0) || tutorialNeedsPresetButtons {
                             presetButtons
                                 .padding(.top, 10)
                                 .padding(.bottom, 60)
                         }
 
-                        if viewModel.isRunning || viewModel.timeRemaining > 0 {
+                        // Show controlButtons when timer running OR during doneButton tutorial step
+                        if viewModel.isRunning || viewModel.timeRemaining > 0 || activeTutorialStep == .doneButton {
                             controlButtons
                                 .padding(.top, 20)
                                 .padding(.bottom, 40)
@@ -127,6 +253,18 @@ struct ContentView: View {
                 )
             }
 
+            // Quality rating overlay (shown after PIN verification)
+            if viewModel.showQualityRating {
+                QualityRatingView(
+                    streakMultiplier: settings.streakMultiplier,
+                    onRatingSelected: { rating in
+                        withAnimation {
+                            viewModel.confirmVerificationWithRating(rating)
+                        }
+                    }
+                )
+            }
+
             // PIN setup prompt overlay (shown after task completion if no PIN set)
             if viewModel.showPINSetupPrompt {
                 PINSetupPromptView(
@@ -145,6 +283,56 @@ struct ContentView: View {
                         }
                     }
                 )
+            }
+
+            // Interactive Tutorial Overlay (not shown for pinSetupRow - that's in Settings)
+            if let step = activeTutorialStep, step != .pinSetupRow {
+                let position = tutorialMessagePosition(for: step)
+
+                // Dark background (visual only - doesn't block taps)
+                Rectangle()
+                    .fill(Color.black.opacity(0.75))
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+
+                // Instruction box with dynamic positioning
+                VStack {
+                    if position == .bottom {
+                        Spacer()
+                    }
+
+                    VStack(spacing: 12) {
+                        Text(tutorialInstruction(for: step))
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+
+                        HStack(spacing: 8) {
+                            Image(systemName: "hand.tap.fill")
+                                .foregroundColor(tutorialHighlightColor(for: step))
+                            Text("Tap the highlighted button!")
+                                .foregroundColor(tutorialHighlightColor(for: step))
+                        }
+                        .font(.system(size: 16, weight: .semibold))
+                    }
+                    .padding(24)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color.black.opacity(0.9))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(tutorialHighlightColor(for: step), lineWidth: 2)
+                            )
+                    )
+                    .padding(.horizontal, 24)
+
+                    if position == .top {
+                        Spacer()
+                    }
+                }
+                .padding(.top, position == .top ? 120 : 0)
+                .padding(.bottom, position == .bottom ? 100 : 0)
+                .allowsHitTesting(false)  // Let taps go through to buttons
             }
         }
         .sheet(isPresented: $viewModel.showCustomPicker) {
@@ -182,12 +370,65 @@ struct ContentView: View {
             if !settings.hasCompletedOnboarding {
                 showingOnboarding = true
             }
+            // Start pulsing animation
+            withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                tutorialPulse = true
+            }
+        }
+        .onChange(of: showingOnboarding) { wasShowing in
+            // Trigger comprehensive tutorial after onboarding completes
+            if wasShowing && !showingOnboarding && settings.hasCompletedOnboarding && !settings.hasSeenClockBadgeTip {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    withAnimation(.spring()) {
+                        activeTutorialStep = .startTimer
+                    }
+                }
+            }
         }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             // Update pause display
             if viewModel.pausedAt != nil {
                 pauseDisplayUpdate.toggle()
             }
+        }
+    }
+
+    // MARK: - Tutorial Helper Functions
+
+    private func tutorialInstruction(for step: TutorialStep) -> String {
+        switch step {
+        case .startTimer: return "Tap iPad to start a timer!"
+        case .clockBadge: return "Tap the clock to customize time!"
+        case .customTimer: return "Create your own custom timer!"
+        case .starsBadge: return "Earn stars by completing tasks!"
+        case .streakBadge: return "Keep your daily streak going!"
+        case .doneButton: return "Tap when you finish early!"
+        case .historyButton: return "See all your progress here!"
+        case .settingsButton: return "Open settings to customize!"
+        case .pinSetupRow: return "Ask a parent to set up a PIN!\nThey'll verify tasks and award bonus stars!"
+        }
+    }
+
+    private func tutorialHighlightColor(for step: TutorialStep) -> Color {
+        switch step {
+        case .startTimer: return .purple
+        case .clockBadge: return .cyan
+        case .customTimer: return .pink
+        case .starsBadge: return .yellow
+        case .streakBadge: return .orange
+        case .doneButton: return .green
+        case .historyButton: return .purple
+        case .settingsButton: return .gray
+        case .pinSetupRow: return .orange
+        }
+    }
+
+    private func tutorialMessagePosition(for step: TutorialStep) -> TutorialMessagePosition {
+        switch step {
+        case .startTimer, .clockBadge, .customTimer, .doneButton:
+            return .top      // Element in middle/bottom → message at top
+        case .starsBadge, .streakBadge, .historyButton, .settingsButton, .pinSetupRow:
+            return .bottom   // Element at top → message at bottom
         }
     }
 
@@ -375,7 +616,7 @@ struct ContentView: View {
                 }
 
                 // Completion overlay - shown when timer finished
-                if viewModel.timeRemaining == 0 && viewModel.totalTime > 0 && !viewModel.awaitingVerification {
+                if viewModel.timeRemaining == 0 && viewModel.totalTime > 0 && !viewModel.awaitingVerification && !viewModel.showQualityRating {
                     ZStack {
                         // Floating confetti decorations
                         ForEach(0..<8, id: \.self) { index in
@@ -533,6 +774,54 @@ struct ContentView: View {
                                 )
                             }
 
+                            // Stars earned celebration (only show if stars were earned via rating)
+                            if viewModel.lastEarnedStars > 0 && viewModel.isVerified {
+                                HStack(spacing: 10) {
+                                    Text("+\(viewModel.lastEarnedStars)")
+                                        .font(.system(size: 32, weight: .black, design: .rounded))
+                                        .foregroundColor(.yellow)
+                                    Image(systemName: "star.fill")
+                                        .font(.system(size: 28))
+                                        .foregroundColor(.yellow)
+                                        .rotationEffect(.degrees(isAnimating ? 15 : -15))
+                                        .animation(
+                                            Animation.easeInOut(duration: 0.4)
+                                                .repeatForever(autoreverses: true),
+                                            value: isAnimating
+                                        )
+                                }
+                                .padding(.horizontal, 28)
+                                .padding(.vertical, 16)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [Color.yellow.opacity(0.3), Color.orange.opacity(0.2)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 20)
+                                                .stroke(
+                                                    LinearGradient(
+                                                        colors: [.yellow, .orange],
+                                                        startPoint: .topLeading,
+                                                        endPoint: .bottomTrailing
+                                                    ),
+                                                    lineWidth: 3
+                                                )
+                                        )
+                                )
+                                .shadow(color: .yellow.opacity(0.4), radius: 12, x: 0, y: 6)
+                                .scaleEffect(isAnimating ? 1.08 : 0.95)
+                                .animation(
+                                    Animation.easeInOut(duration: 0.5)
+                                        .repeatForever(autoreverses: true),
+                                    value: isAnimating
+                                )
+                            }
+
                             // "New Timer" button
                             Button(action: {
                                 viewModel.resetTimer()
@@ -668,6 +957,19 @@ struct ContentView: View {
         return ZStack {
             // Center custom button
             Button(action: {
+                // Tutorial step 3: Custom timer button - advance AND start timer
+                if activeTutorialStep == .customTimer {
+                    let generator = UIImpactFeedbackGenerator(style: .heavy)
+                    generator.impactOccurred()
+                    withAnimation {
+                        activeTutorialStep = .starsBadge
+                    }
+                    // NOW start a demo timer for the remaining tutorial steps
+                    viewModel.startTimer(minutes: settings.ipadTime, activity: "iPad", activityIcon: "ipad")
+                    return
+                }
+                // Block during other tutorial steps
+                guard activeTutorialStep == nil else { return }
                 let generator = UIImpactFeedbackGenerator(style: .heavy)
                 generator.impactOccurred()
                 viewModel.showCustomPicker = true
@@ -704,7 +1006,19 @@ struct ContentView: View {
                             .foregroundColor(.white)
                     }
                 }
+                .background(
+                    Group {
+                        if activeTutorialStep == .customTimer {
+                            Circle()
+                                .stroke(Color.pink, lineWidth: 4)
+                                .shadow(color: .pink, radius: 12)
+                                .frame(width: 100, height: 100)
+                                .scaleEffect(tutorialPulse ? 1.3 : 1.15)
+                        }
+                    }
+                )
             }
+            .zIndex(activeTutorialStep == .customTimer ? 100 : 0)
 
             // Radial preset buttons
             ForEach(Array(presets.enumerated()), id: \.offset) { index, preset in
@@ -716,18 +1030,48 @@ struct ContentView: View {
                     minutes: preset.minutes,
                     color: preset.color,
                     action: {
+                        // Tutorial step 1: Just advance (don't start timer yet)
+                        if activeTutorialStep == .startTimer && index == 0 {
+                            // DON'T start timer here - wait until step 3 completes
+                            withAnimation {
+                                activeTutorialStep = .clockBadge
+                            }
+                            return
+                        }
+                        // Block other buttons during tutorial
+                        guard activeTutorialStep == nil else { return }
                         viewModel.startTimer(minutes: preset.minutes, activity: preset.title, activityIcon: preset.icon)
                     },
                     onTimeTap: {
-                        editingActivity = preset.activity
-                        editingMinutes = max(5, ((preset.minutes + 2) / 5) * 5)
-                        showingEditSheet = true
-                    }
+                        if activeTutorialStep == .clockBadge && index == 0 {
+                            // Tutorial mode - only first button (iPad) responds
+                            settings.hasSeenClockBadgeTip = true
+                            // Briefly show edit sheet then advance
+                            showingEditSheet = true
+                            editingActivity = preset.activity
+                            editingMinutes = max(5, ((preset.minutes + 2) / 5) * 5)
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                showingEditSheet = false
+                                withAnimation {
+                                    activeTutorialStep = .customTimer
+                                }
+                            }
+                        } else if activeTutorialStep == nil {
+                            // Normal mode - all clock badges work
+                            editingActivity = preset.activity
+                            editingMinutes = max(5, ((preset.minutes + 2) / 5) * 5)
+                            showingEditSheet = true
+                        }
+                        // During tutorial, non-highlighted clock badges do nothing
+                    },
+                    showTutorialHighlight: activeTutorialStep == .clockBadge && index == 0,  // Highlight clock badge
+                    showMainButtonHighlight: activeTutorialStep == .startTimer && index == 0  // Highlight main button
                 )
                 .offset(
                     x: cos(angle) * radius,
                     y: sin(angle) * radius
                 )
+                .zIndex((activeTutorialStep == .clockBadge || activeTutorialStep == .startTimer) && index == 0 ? 100 : 0)
             }
         }
         .frame(height: 340)
@@ -738,6 +1082,8 @@ struct ContentView: View {
         HStack(spacing: 24) {
             // Pause/Play button
             Button(action: {
+                // Block during tutorial
+                guard activeTutorialStep == nil else { return }
                 if viewModel.isRunning {
                     viewModel.pauseTimer()
                 } else if viewModel.timeRemaining > 0 {
@@ -752,6 +1098,19 @@ struct ContentView: View {
 
             // "I'm Done!" button - for early completion
             Button(action: {
+                // Tutorial step 6: Done button
+                if activeTutorialStep == .doneButton {
+                    let generator = UIImpactFeedbackGenerator(style: .heavy)
+                    generator.impactOccurred()
+                    // Cancel timer without saving and advance to history
+                    viewModel.resetTimer()
+                    withAnimation {
+                        activeTutorialStep = .historyButton
+                    }
+                    return
+                }
+                // Block during other tutorial steps
+                guard activeTutorialStep == nil else { return }
                 viewModel.finishEarly()
             }) {
                 VStack(spacing: 4) {
@@ -769,10 +1128,24 @@ struct ContentView: View {
                         .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundColor(.white.opacity(0.9))
                 }
+                .background(
+                    Group {
+                        if activeTutorialStep == .doneButton {
+                            Circle()
+                                .stroke(Color.green, lineWidth: 4)
+                                .shadow(color: .green, radius: 12)
+                                .frame(width: 55, height: 55)
+                                .scaleEffect(tutorialPulse ? 1.4 : 1.2)
+                        }
+                    }
+                )
             }
+            .zIndex(activeTutorialStep == .doneButton ? 100 : 0)
 
             // Stop/Cancel button
             Button(action: {
+                // Block during tutorial
+                guard activeTutorialStep == nil else { return }
                 showingCancelConfirm = true
             }) {
                 Image(systemName: "xmark.circle.fill")
@@ -893,10 +1266,33 @@ struct ContentView: View {
             tickSoundEnabled: $settings.tickSoundEnabled,
             childName: $settings.childName,
             isVerificationEnabled: settings.isVerificationEnabled,
+            activeTutorialStep: $activeTutorialStep,
+            tutorialPulse: tutorialPulse,
             onPINSetupTap: {
+                // If in tutorial, complete it
+                if activeTutorialStep == .pinSetupRow {
+                    withAnimation {
+                        activeTutorialStep = nil
+                    }
+                }
                 showingSettings = false
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     showingPINSetup = true
+                }
+            },
+            onSkipTutorial: {
+                withAnimation {
+                    activeTutorialStep = nil
+                }
+                showingSettings = false
+            },
+            onReplayTutorial: {
+                settings.resetTutorials()
+                showingSettings = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    withAnimation(.spring()) {
+                        activeTutorialStep = .startTimer
+                    }
                 }
             },
             onDone: {
@@ -1214,6 +1610,169 @@ struct PINButton: View {
                 .frame(width: 75, height: 75)
                 .background(Circle().fill(Color.white.opacity(0.15)))
         }
+    }
+}
+
+// MARK: - Quality Rating View (shown after PIN verification)
+struct QualityRatingView: View {
+    let streakMultiplier: Double
+    let onRatingSelected: (TaskRating) -> Void
+
+    @State private var isAnimating = false
+
+    var body: some View {
+        ZStack {
+            // Dark gradient overlay
+            LinearGradient(
+                colors: [
+                    Color(red: 0.1, green: 0.15, blue: 0.25).opacity(0.95),
+                    Color(red: 0.05, green: 0.1, blue: 0.2).opacity(0.98)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
+            // Subtle floating decorations
+            FloatingDecorationsView(isAnimating: isAnimating)
+                .opacity(0.5)
+
+            VStack(spacing: 24) {
+                Spacer()
+
+                // Header
+                VStack(spacing: 12) {
+                    Text("✅")
+                        .font(.system(size: 60))
+                        .scaleEffect(isAnimating ? 1.1 : 1.0)
+                        .animation(
+                            Animation.easeInOut(duration: 1.0)
+                                .repeatForever(autoreverses: true),
+                            value: isAnimating
+                        )
+
+                    Text("How did they do?")
+                        .font(.system(size: 28, weight: .black, design: .rounded))
+                        .foregroundColor(.white)
+
+                    Text("Rate the quality of work")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+
+                // Rating buttons
+                VStack(spacing: 16) {
+                    RatingButton(
+                        rating: .amazing,
+                        multiplier: streakMultiplier,
+                        action: onRatingSelected
+                    )
+
+                    RatingButton(
+                        rating: .good,
+                        multiplier: streakMultiplier,
+                        action: onRatingSelected
+                    )
+
+                    RatingButton(
+                        rating: .needsWork,
+                        multiplier: streakMultiplier,
+                        action: onRatingSelected
+                    )
+                }
+                .padding(.horizontal, 20)
+
+                // Streak multiplier badge
+                if streakMultiplier > 1 {
+                    HStack(spacing: 6) {
+                        Text("🔥")
+                        Text("\(streakMultiplier, specifier: "%.1f")x Streak Bonus!")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundColor(.orange)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(
+                        Capsule()
+                            .fill(Color.orange.opacity(0.2))
+                    )
+                    .padding(.top, 8)
+                }
+
+                Spacer()
+            }
+            .padding()
+        }
+        .onAppear { isAnimating = true }
+    }
+}
+
+struct RatingButton: View {
+    let rating: TaskRating
+    let multiplier: Double
+    let action: (TaskRating) -> Void
+
+    @State private var isPressed = false
+
+    private var calculatedStars: Int {
+        Int(Double(rating.rawValue) * multiplier)
+    }
+
+    private var buttonColor: Color {
+        switch rating {
+        case .amazing: return Color(red: 1.0, green: 0.84, blue: 0.0) // Gold
+        case .good: return Color(red: 0.3, green: 0.7, blue: 0.4) // Green
+        case .needsWork: return Color(red: 0.5, green: 0.6, blue: 0.7) // Gray-blue
+        }
+    }
+
+    var body: some View {
+        Button(action: {
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
+            action(rating)
+        }) {
+            HStack(spacing: 16) {
+                // Icon
+                Text(rating.icon)
+                    .font(.system(size: 36))
+
+                // Title and subtitle
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(rating.title)
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+
+                    Text(rating.subtitle)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+
+                Spacer()
+
+                // Stars earned
+                HStack(spacing: 4) {
+                    Text("+\(calculatedStars)")
+                        .font(.system(size: 22, weight: .black, design: .rounded))
+                        .foregroundColor(.yellow)
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(.yellow)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(buttonColor.opacity(0.3))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(buttonColor.opacity(0.6), lineWidth: 2)
+                    )
+            )
+            .scaleEffect(isPressed ? 0.96 : 1.0)
+        }
+        .buttonStyle(PressableButtonStyle(isPressed: $isPressed))
     }
 }
 
@@ -1795,7 +2354,7 @@ struct CustomTimerPickerView: View {
 
 // MARK: - Edit Timer Sheet View (Fun & Engaging)
 struct EditTimerSheetView: View {
-    let editingActivity: ContentView.ActivityType?
+    let editingActivity: ActivityType?
     @Binding var editingMinutes: Int
     let activityName: String
     let activityIcon: String
@@ -2020,12 +2579,20 @@ struct SettingsSheetView: View {
     @Binding var tickSoundEnabled: Bool
     @Binding var childName: String
     let isVerificationEnabled: Bool
+    @Binding var activeTutorialStep: TutorialStep?
+    let tutorialPulse: Bool
     let onPINSetupTap: () -> Void
+    let onSkipTutorial: () -> Void
+    let onReplayTutorial: () -> Void
     let onDone: () -> Void
 
     @State private var isAnimating = false
     @State private var editingName: String = ""
     @State private var isEditingName = false
+
+    private var isShowingPINTutorial: Bool {
+        activeTutorialStep == .pinSetupRow
+    }
 
     var body: some View {
         NavigationView {
@@ -2261,11 +2828,138 @@ struct SettingsSheetView: View {
                                         .stroke(Color.white.opacity(0.15), lineWidth: 1)
                                 )
                         )
+                        .background(
+                            // Tutorial highlight
+                            Group {
+                                if isShowingPINTutorial {
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .stroke(Color.orange, lineWidth: 4)
+                                        .shadow(color: .orange, radius: 12)
+                                        .scaleEffect(tutorialPulse ? 1.05 : 1.0)
+                                }
+                            }
+                        )
+                        .padding(.horizontal, 20)
+                        .zIndex(isShowingPINTutorial ? 100 : 0)
+
+                        // Help Card
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "questionmark.circle.fill")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(.blue)
+                                Text("Help")
+                                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
+                            }
+
+                            Button(action: onReplayTutorial) {
+                                HStack(spacing: 12) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(Color.blue.opacity(0.2))
+                                            .frame(width: 44, height: 44)
+                                        Image(systemName: "arrow.clockwise.circle.fill")
+                                            .font(.system(size: 22))
+                                            .foregroundColor(.blue)
+                                    }
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Replay Tutorial")
+                                            .font(.system(size: 17, weight: .semibold))
+                                            .foregroundColor(.white)
+                                        Text("Show feature tips again")
+                                            .font(.system(size: 13))
+                                            .foregroundColor(.white.opacity(0.6))
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right.circle.fill")
+                                        .font(.system(size: 24))
+                                        .foregroundColor(.white.opacity(0.4))
+                                }
+                            }
+                        }
+                        .padding(20)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(Color.white.opacity(0.1))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                                )
+                        )
                         .padding(.horizontal, 20)
 
                         Spacer(minLength: 40)
                     }
                     .padding(.top, 10)
+                }
+
+                // Tutorial overlay for PIN step
+                if isShowingPINTutorial {
+                    // Dark background (doesn't block taps - allows user to tap PIN row)
+                    Rectangle()
+                        .fill(Color.black.opacity(0.65))
+                        .ignoresSafeArea()
+                        .allowsHitTesting(false)
+
+                    // Message content at TOP (visual only - doesn't block taps)
+                    VStack {
+                        VStack(spacing: 12) {
+                            VStack(spacing: 6) {
+                                Text("Ask a parent to set up a PIN!")
+                                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.center)
+
+                                Text("They'll verify tasks and award bonus stars!")
+                                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                                    .foregroundColor(.white.opacity(0.8))
+                                    .multilineTextAlignment(.center)
+                            }
+
+                            HStack(spacing: 6) {
+                                Image(systemName: "hand.point.down.fill")
+                                    .foregroundColor(.orange)
+                                Text("Tap the orange card below!")
+                                    .foregroundColor(.orange)
+                            }
+                            .font(.system(size: 13, weight: .semibold))
+                        }
+                        .padding(20)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.black.opacity(0.85))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(Color.orange.opacity(0.5), lineWidth: 2)
+                                )
+                        )
+                        .padding(.horizontal, 24)
+                        .padding(.top, 100)
+
+                        Spacer()
+                    }
+                    .allowsHitTesting(false)  // Let taps pass through to PIN card
+
+                    // Skip button (tappable) - positioned below message box
+                    VStack {
+                        Spacer()
+                            .frame(height: 215)  // Position below the message box
+
+                        Button(action: onSkipTutorial) {
+                            Text("Skip Tutorial")
+                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .foregroundColor(.white.opacity(0.7))
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(
+                                    Capsule()
+                                        .fill(Color.white.opacity(0.15))
+                                )
+                        }
+
+                        Spacer()
+                    }
                 }
             }
             .onAppear { isAnimating = true }

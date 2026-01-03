@@ -138,8 +138,12 @@ struct RadialPresetButton: View {
     let color: Color
     let action: () -> Void
     var onTimeTap: (() -> Void)? = nil
+    var showTutorialHighlight: Bool = false      // Highlights clock badge
+    var showMainButtonHighlight: Bool = false    // Highlights entire button
 
     @State private var isPressed = false
+    @State private var pulseAnimation = false
+    @State private var mainPulseAnimation = false
 
     var body: some View {
         VStack(spacing: 6) {
@@ -185,8 +189,20 @@ struct RadialPresetButton: View {
                     }
                 }
                 .scaleEffect(isPressed ? 0.9 : 1.0)
+                .background(
+                    Group {
+                        if showMainButtonHighlight {
+                            Circle()
+                                .stroke(Color.purple, lineWidth: 4)
+                                .shadow(color: .purple, radius: 12)
+                                .frame(width: 90, height: 90)
+                                .scaleEffect(mainPulseAnimation ? 1.3 : 1.15)
+                        }
+                    }
+                )
             }
             .buttonStyle(PressableButtonStyle(isPressed: $isPressed))
+            .zIndex(showMainButtonHighlight ? 100 : 0)
 
             // Time badge below the circle
             Button(action: {
@@ -212,8 +228,49 @@ struct RadialPresetButton: View {
                         .fill(color.opacity(0.8))
                         .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
                 )
+                .background(
+                    Group {
+                        if showTutorialHighlight {
+                            Capsule()
+                                .stroke(Color.cyan, lineWidth: 3)
+                                .shadow(color: .cyan, radius: 10)
+                                .scaleEffect(pulseAnimation ? 1.3 : 1.15)
+                        }
+                    }
+                )
             }
             .buttonStyle(PlainButtonStyle())
+            .zIndex(showTutorialHighlight ? 100 : 0)
+        }
+        .onAppear {
+            if showTutorialHighlight {
+                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                    pulseAnimation = true
+                }
+            }
+            if showMainButtonHighlight {
+                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                    mainPulseAnimation = true
+                }
+            }
+        }
+        .onChange(of: showTutorialHighlight) { isHighlighted in
+            if isHighlighted {
+                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                    pulseAnimation = true
+                }
+            } else {
+                pulseAnimation = false
+            }
+        }
+        .onChange(of: showMainButtonHighlight) { isHighlighted in
+            if isHighlighted {
+                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                    mainPulseAnimation = true
+                }
+            } else {
+                mainPulseAnimation = false
+            }
         }
     }
 }
