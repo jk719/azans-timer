@@ -12,13 +12,13 @@ struct ContentView: View {
     @State private var editingMinutes: Int = 10
     @State private var showingSettings = false
     @State private var showingHistory = false
-    @State private var showingEstimationGame = false
     @State private var pauseDisplayTimer: Timer? = nil
     @State private var pauseDisplayUpdate: Bool = false
     @State private var showingPINSetup = false
     @State private var showingPINSetupFromPrompt = false  // PIN setup triggered from completion prompt
     @State private var enteredPIN: String = ""
     @State private var showingOnboarding = false
+    @State private var showingCancelConfirm = false
 
     enum ActivityType {
         case ipad, reading, shower, homework
@@ -137,6 +137,12 @@ struct ContentView: View {
                         withAnimation {
                             viewModel.skipPINSetup()
                         }
+                    },
+                    onDontAskAgain: {
+                        withAnimation {
+                            settings.skipPINSetupPermanently = true
+                            viewModel.skipPINSetup()
+                        }
                     }
                 )
             }
@@ -153,9 +159,6 @@ struct ContentView: View {
         .sheet(isPresented: $showingHistory) {
             historySheet
         }
-        .sheet(isPresented: $showingEstimationGame) {
-            timeEstimationGame
-        }
         .sheet(isPresented: $showingPINSetup) {
             PINSetupView(isPresented: $showingPINSetup)
         }
@@ -167,6 +170,12 @@ struct ContentView: View {
         }
         .fullScreenCover(isPresented: $showingOnboarding) {
             OnboardingView(isPresented: $showingOnboarding)
+        }
+        .alert("Stop Timer?", isPresented: $showingCancelConfirm) {
+            Button("Stop", role: .destructive) { viewModel.resetTimer() }
+            Button("Keep Going", role: .cancel) { }
+        } message: {
+            Text("Your progress won't be saved.")
         }
         .onAppear {
             // Show onboarding if child name not set
@@ -346,6 +355,24 @@ struct ContentView: View {
                     activityIcon: viewModel.timeRemaining > 0 ? viewModel.currentActivityIcon : ""
                 )
                 .frame(width: 320, height: 320)
+
+                // Persistent PAUSED indicator
+                if viewModel.pausedAt != nil && !viewModel.isRunning && viewModel.timeRemaining > 0 {
+                    VStack {
+                        Spacer()
+                        HStack(spacing: 6) {
+                            Image(systemName: "pause.circle.fill")
+                                .font(.system(size: 16))
+                            Text("PAUSED")
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Capsule().fill(Color.black.opacity(0.4)))
+                    }
+                    .frame(width: 320, height: 320)
+                }
 
                 // Completion overlay - shown when timer finished
                 if viewModel.timeRemaining == 0 && viewModel.totalTime > 0 && !viewModel.awaitingVerification {
@@ -746,7 +773,7 @@ struct ContentView: View {
 
             // Stop/Cancel button
             Button(action: {
-                viewModel.resetTimer()
+                showingCancelConfirm = true
             }) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 55))
@@ -866,12 +893,6 @@ struct ContentView: View {
             tickSoundEnabled: $settings.tickSoundEnabled,
             childName: $settings.childName,
             isVerificationEnabled: settings.isVerificationEnabled,
-            onTimeGameTap: {
-                showingSettings = false
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    showingEstimationGame = true
-                }
-            },
             onPINSetupTap: {
                 showingSettings = false
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -895,11 +916,6 @@ struct ContentView: View {
                 showingHistory = false
             }
         )
-    }
-
-    // Time estimation game
-    private var timeEstimationGame: some View {
-        TimeEstimationGameView(isPresented: $showingEstimationGame)
     }
 
     private func activityName(_ activity: ActivityType) -> String {
@@ -1019,361 +1035,6 @@ struct SessionRow: View {
             return "\(mins) min"
         } else {
             return "\(seconds) sec"
-        }
-    }
-}
-
-// Time Estimation Game View (Fun & Engaging)
-struct TimeEstimationGameView: View {
-    @Binding var isPresented: Bool
-    @State private var gameState: GameState = .ready
-    @State private var targetSeconds: Int = 0
-    @State private var elapsedSeconds: Int = 0
-    @State private var timer: Timer? = nil
-    @State private var isAnimating = false
-    @State private var tapScale: CGFloat = 1.0
-
-    enum GameState {
-        case ready, counting, result
-    }
-
-    var body: some View {
-        NavigationView {
-            ZStack {
-                // Multi-color gradient background
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.35, green: 0.25, blue: 0.55),
-                        Color(red: 0.3, green: 0.2, blue: 0.5),
-                        Color(red: 0.25, green: 0.15, blue: 0.45)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
-
-                // Floating decorations
-                FloatingDecorationsView(isAnimating: isAnimating)
-
-                VStack(spacing: 30) {
-                    Spacer()
-
-                    if gameState == .ready {
-                        readyView
-                    } else if gameState == .counting {
-                        countingView
-                    } else {
-                        resultView
-                    }
-
-                    Spacer()
-                }
-                .padding()
-            }
-            .onAppear { isAnimating = true }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        stopGame()
-                        isPresented = false
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 26))
-                            .foregroundColor(.white.opacity(0.7))
-                    }
-                }
-            }
-        }
-    }
-
-    private var readyView: some View {
-        VStack(spacing: 24) {
-            // Animated header
-            ZStack {
-                Circle()
-                    .fill(Color.purple.opacity(0.2))
-                    .frame(width: 120, height: 120)
-                    .scaleEffect(isAnimating ? 1.15 : 1.0)
-                    .animation(
-                        Animation.easeInOut(duration: 1.5)
-                            .repeatForever(autoreverses: true),
-                        value: isAnimating
-                    )
-
-                Image(systemName: "brain.head.profile")
-                    .font(.system(size: 60, weight: .medium))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.purple, .pink],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .rotationEffect(.degrees(isAnimating ? 5 : -5))
-                    .animation(
-                        Animation.easeInOut(duration: 1.2)
-                            .repeatForever(autoreverses: true),
-                        value: isAnimating
-                    )
-            }
-
-            Text("Time Estimation Game")
-                .font(.system(size: 28, weight: .black, design: .rounded))
-                .foregroundColor(.white)
-
-            Text("Close your eyes and tap when you think time is up!")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.white.opacity(0.8))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 30)
-
-            // Time selection cards
-            VStack(spacing: 16) {
-                HStack(spacing: 8) {
-                    Image(systemName: "clock.circle.fill")
-                        .foregroundColor(.cyan)
-                    Text("Choose a time:")
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                }
-
-                HStack(spacing: 14) {
-                    EnhancedTimeButton(seconds: 10, label: "10 sec", color: .green, isAnimating: isAnimating) { startGame(seconds: 10) }
-                    EnhancedTimeButton(seconds: 30, label: "30 sec", color: .orange, isAnimating: isAnimating) { startGame(seconds: 30) }
-                    EnhancedTimeButton(seconds: 60, label: "1 min", color: .pink, isAnimating: isAnimating) { startGame(seconds: 60) }
-                }
-            }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 24)
-                    .fill(Color.white.opacity(0.1))
-            )
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
-        }
-    }
-
-    private var countingView: some View {
-        VStack(spacing: 30) {
-            Text("Estimate \(targetSeconds) seconds")
-                .font(.system(size: 26, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
-
-            Text("Tap when you think time is up!")
-                .font(.system(size: 17))
-                .foregroundColor(.white.opacity(0.7))
-
-            Button(action: {
-                stopGame()
-                gameState = .result
-            }) {
-                ZStack {
-                    // Outer glow
-                    Circle()
-                        .fill(Color.purple.opacity(0.3))
-                        .frame(width: 220, height: 220)
-                        .scaleEffect(isAnimating ? 1.1 : 0.95)
-                        .animation(
-                            Animation.easeInOut(duration: 0.8)
-                                .repeatForever(autoreverses: true),
-                            value: isAnimating
-                        )
-
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.purple, Color.pink.opacity(0.8)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 180, height: 180)
-                        .shadow(color: .purple.opacity(0.6), radius: 25)
-
-                    VStack(spacing: 8) {
-                        Image(systemName: "hand.tap.fill")
-                            .font(.system(size: 55))
-                            .foregroundColor(.white)
-                        Text("TAP!")
-                            .font(.system(size: 26, weight: .black, design: .rounded))
-                            .foregroundColor(.white)
-                    }
-                }
-            }
-            .scaleEffect(tapScale)
-        }
-    }
-
-    private var resultView: some View {
-        let difference = elapsedSeconds - targetSeconds
-        let accuracy = max(0, 100 - abs(difference) * 5)
-        let emoji = accuracy >= 90 ? "🎯" : accuracy >= 70 ? "👍" : accuracy >= 50 ? "😊" : "🤔"
-
-        return VStack(spacing: 24) {
-            Text(emoji)
-                .font(.system(size: 90))
-                .scaleEffect(isAnimating ? 1.1 : 0.9)
-                .animation(
-                    Animation.easeInOut(duration: 0.5)
-                        .repeatForever(autoreverses: true),
-                    value: isAnimating
-                )
-
-            Text(accuracy >= 90 ? "Perfect!" : accuracy >= 70 ? "Great Job!" : accuracy >= 50 ? "Good Try!" : "Keep Practicing!")
-                .font(.system(size: 30, weight: .black, design: .rounded))
-                .foregroundColor(.white)
-
-            // Results card
-            VStack(spacing: 14) {
-                ResultRow(label: "Target", value: "\(targetSeconds) sec", icon: "target", color: .cyan)
-                ResultRow(label: "Your guess", value: "\(elapsedSeconds) sec", icon: "hand.tap", color: .purple)
-                ResultRow(
-                    label: "Difference",
-                    value: "\(difference > 0 ? "+" : "")\(difference) sec",
-                    icon: abs(difference) <= 3 ? "checkmark.circle.fill" : "arrow.left.arrow.right",
-                    color: abs(difference) <= 3 ? .green : abs(difference) <= 10 ? .yellow : .orange
-                )
-            }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.white.opacity(0.1))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                    )
-            )
-            .padding(.horizontal, 30)
-
-            Button(action: {
-                gameState = .ready
-            }) {
-                HStack(spacing: 10) {
-                    Image(systemName: "arrow.counterclockwise")
-                        .font(.system(size: 18, weight: .bold))
-                    Text("Try Again")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                }
-                .foregroundColor(.white)
-                .padding(.horizontal, 36)
-                .padding(.vertical, 16)
-                .background(
-                    Capsule()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.purple, Color.pink],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                )
-                .shadow(color: .purple.opacity(0.4), radius: 10, x: 0, y: 5)
-            }
-            .padding(.top, 10)
-        }
-    }
-
-    private func startGame(seconds: Int) {
-        targetSeconds = seconds
-        elapsedSeconds = 0
-        gameState = .counting
-
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.impactOccurred()
-
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            elapsedSeconds += 1
-        }
-    }
-
-    private func stopGame() {
-        timer?.invalidate()
-        timer = nil
-
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.success)
-    }
-}
-
-// MARK: - Enhanced Time Button
-struct EnhancedTimeButton: View {
-    let seconds: Int
-    let label: String
-    let color: Color
-    let isAnimating: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 6) {
-                Text("\(seconds)")
-                    .font(.system(size: 28, weight: .black, design: .rounded))
-                    .foregroundColor(.white)
-                Text(seconds == 60 ? "min" : "sec")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.7))
-            }
-            .frame(width: 80, height: 80)
-            .background(
-                RoundedRectangle(cornerRadius: 18)
-                    .fill(color.opacity(0.3))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 18)
-                            .stroke(color.opacity(0.5), lineWidth: 2)
-                    )
-            )
-            .scaleEffect(isAnimating ? 1.02 : 0.98)
-            .animation(
-                Animation.easeInOut(duration: 1.2)
-                    .repeatForever(autoreverses: true)
-                    .delay(Double(seconds) * 0.01),
-                value: isAnimating
-            )
-        }
-    }
-}
-
-// MARK: - Result Row
-struct ResultRow: View {
-    let label: String
-    let value: String
-    let icon: String
-    let color: Color
-
-    var body: some View {
-        HStack {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 16))
-                    .foregroundColor(color)
-                Text(label)
-                    .font(.system(size: 15))
-                    .foregroundColor(.white.opacity(0.7))
-            }
-            Spacer()
-            Text(value)
-                .font(.system(size: 17, weight: .bold, design: .rounded))
-                .foregroundColor(color)
-        }
-    }
-}
-
-struct TimeButton: View {
-    let seconds: Int
-    let label: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(label)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 14)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.purple.opacity(0.6))
-                )
         }
     }
 }
@@ -1560,6 +1221,7 @@ struct PINButton: View {
 struct PINSetupPromptView: View {
     let onSetupNow: () -> Void
     let onMaybeLater: () -> Void
+    let onDontAskAgain: () -> Void
     @State private var isAnimating = false
 
     var body: some View {
@@ -1661,6 +1323,13 @@ struct PINSetupPromptView: View {
                             .font(.system(size: 16, weight: .semibold, design: .rounded))
                             .foregroundColor(.white.opacity(0.7))
                             .padding(.vertical, 12)
+                    }
+
+                    Button(action: onDontAskAgain) {
+                        Text("Don't ask again")
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                            .foregroundColor(.white.opacity(0.4))
+                            .padding(.vertical, 8)
                     }
                 }
                 .padding(.horizontal, 40)
@@ -2351,7 +2020,6 @@ struct SettingsSheetView: View {
     @Binding var tickSoundEnabled: Bool
     @Binding var childName: String
     let isVerificationEnabled: Bool
-    let onTimeGameTap: () -> Void
     let onPINSetupTap: () -> Void
     let onDone: () -> Void
 
@@ -2531,53 +2199,6 @@ struct SettingsSheetView: View {
                                 }
                             }
                             .tint(.green)
-                        }
-                        .padding(20)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.white.opacity(0.1))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                                )
-                        )
-                        .padding(.horizontal, 20)
-
-                        // Fun Features Card
-                        VStack(alignment: .leading, spacing: 16) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "sparkles")
-                                    .font(.system(size: 18))
-                                    .foregroundColor(.yellow)
-                                Text("Fun Features")
-                                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                                    .foregroundColor(.white)
-                            }
-
-                            Button(action: onTimeGameTap) {
-                                HStack(spacing: 12) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(Color.purple.opacity(0.2))
-                                            .frame(width: 44, height: 44)
-                                        Image(systemName: "brain.head.profile")
-                                            .font(.system(size: 22))
-                                            .foregroundColor(.purple)
-                                    }
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("Time Estimation Game")
-                                            .font(.system(size: 17, weight: .semibold))
-                                            .foregroundColor(.white)
-                                        Text("Practice guessing time!")
-                                            .font(.system(size: 13))
-                                            .foregroundColor(.white.opacity(0.6))
-                                    }
-                                    Spacer()
-                                    Image(systemName: "chevron.right.circle.fill")
-                                        .font(.system(size: 24))
-                                        .foregroundColor(.white.opacity(0.4))
-                                }
-                            }
                         }
                         .padding(20)
                         .background(

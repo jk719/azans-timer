@@ -261,9 +261,13 @@ class TimerViewModel: ObservableObject {
             // Wait for parent verification before saving
             awaitingVerification = true
             isVerified = false
-        } else {
-            // No PIN set - prompt user to set one up
+        } else if !settings.skipPINSetupPermanently {
+            // No PIN set and user hasn't opted out - prompt user to set one up
             showPINSetupPrompt = true
+        } else {
+            // User opted out of PIN setup - save session directly
+            isVerified = true
+            saveCompletedSession()
         }
     }
 
@@ -286,9 +290,13 @@ class TimerViewModel: ObservableObject {
             // Wait for parent verification before saving
             awaitingVerification = true
             isVerified = false
-        } else {
-            // No PIN set - prompt user to set one up
+        } else if !settings.skipPINSetupPermanently {
+            // No PIN set and user hasn't opted out - prompt user to set one up
             showPINSetupPrompt = true
+        } else {
+            // User opted out of PIN setup - save session directly
+            isVerified = true
+            saveCompletedSession()
         }
     }
 

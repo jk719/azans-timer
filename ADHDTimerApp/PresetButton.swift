@@ -196,11 +196,13 @@ struct RadialPresetButton: View {
                     onTimeTap()
                 }
             }) {
-                HStack(spacing: 2) {
+                HStack(spacing: 3) {
                     Image(systemName: "clock.fill")
                         .font(.system(size: 9, weight: .bold))
                     Text("\(minutes)m")
                         .font(.system(size: 11, weight: .bold, design: .rounded))
+                    Image(systemName: "pencil")
+                        .font(.system(size: 8, weight: .bold))
                 }
                 .foregroundColor(.white.opacity(0.95))
                 .padding(.horizontal, 8)

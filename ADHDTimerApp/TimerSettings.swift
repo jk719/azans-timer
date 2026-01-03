@@ -100,6 +100,13 @@ class TimerSettings: ObservableObject {
         return parentPIN != nil && !parentPIN!.isEmpty
     }
 
+    // Skip PIN setup permanently (user chose "Don't ask again")
+    @Published var skipPINSetupPermanently: Bool {
+        didSet {
+            UserDefaults.standard.set(skipPINSetupPermanently, forKey: "skipPINSetupPermanently")
+        }
+    }
+
     @Published var sessionHistory: [TimerSession] {
         didSet {
             if let encoded = try? JSONEncoder().encode(sessionHistory) {
@@ -154,6 +161,7 @@ class TimerSettings: ObservableObject {
         self.tickSoundEnabled = UserDefaults.standard.object(forKey: "tickSoundEnabled") as? Bool ?? false
         self.childName = UserDefaults.standard.string(forKey: "childName") ?? ""
         self.parentPIN = UserDefaults.standard.string(forKey: "parentPIN")
+        self.skipPINSetupPermanently = UserDefaults.standard.bool(forKey: "skipPINSetupPermanently")
 
         // Load session history
         if let data = UserDefaults.standard.data(forKey: "sessionHistory"),
