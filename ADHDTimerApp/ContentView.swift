@@ -161,6 +161,24 @@ struct ContentView: View {
 
                     Spacer()
 
+                    // Tutorial button
+                    Button(action: {
+                        guard activeTutorialStep == nil else { return }
+                        settings.resetTutorials()
+                        withAnimation(.spring()) {
+                            activeTutorialStep = .startTimer
+                        }
+                    }) {
+                        Text("Tutorial")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.9))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Capsule().fill(Color.white.opacity(0.15)))
+                    }
+                    .opacity(activeTutorialStep != nil ? 0.5 : 1.0)
+                    .disabled(activeTutorialStep != nil)
+
                     Button(action: {
                         // Tutorial step 8: Settings button
                         if activeTutorialStep == .settingsButton {
@@ -295,7 +313,7 @@ struct ContentView: View {
                     .ignoresSafeArea()
                     .allowsHitTesting(false)
 
-                // Instruction box with dynamic positioning
+                // Instruction box with dynamic positioning (visual only)
                 VStack {
                     if position == .bottom {
                         Spacer()
@@ -333,6 +351,35 @@ struct ContentView: View {
                 .padding(.top, position == .top ? 120 : 0)
                 .padding(.bottom, position == .bottom ? 100 : 0)
                 .allowsHitTesting(false)  // Let taps go through to buttons
+
+                // Skip Tutorial button (tappable)
+                VStack {
+                    if position == .top {
+                        Spacer()
+                    }
+
+                    Button(action: {
+                        withAnimation {
+                            activeTutorialStep = nil
+                        }
+                    }) {
+                        Text("Skip Tutorial")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.7))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(
+                                Capsule()
+                                    .fill(Color.white.opacity(0.15))
+                            )
+                    }
+
+                    if position == .bottom {
+                        Spacer()
+                    }
+                }
+                .padding(.top, position == .top ? 0 : 20)
+                .padding(.bottom, position == .bottom ? 40 : 20)
             }
         }
         .sheet(isPresented: $viewModel.showCustomPicker) {
@@ -1285,15 +1332,6 @@ struct ContentView: View {
                     activeTutorialStep = nil
                 }
                 showingSettings = false
-            },
-            onReplayTutorial: {
-                settings.resetTutorials()
-                showingSettings = false
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    withAnimation(.spring()) {
-                        activeTutorialStep = .startTimer
-                    }
-                }
             },
             onDone: {
                 showingSettings = false
@@ -2583,7 +2621,6 @@ struct SettingsSheetView: View {
     let tutorialPulse: Bool
     let onPINSetupTap: () -> Void
     let onSkipTutorial: () -> Void
-    let onReplayTutorial: () -> Void
     let onDone: () -> Void
 
     @State private var isAnimating = false
@@ -2842,52 +2879,6 @@ struct SettingsSheetView: View {
                         .padding(.horizontal, 20)
                         .zIndex(isShowingPINTutorial ? 100 : 0)
 
-                        // Help Card
-                        VStack(alignment: .leading, spacing: 16) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "questionmark.circle.fill")
-                                    .font(.system(size: 18))
-                                    .foregroundColor(.blue)
-                                Text("Help")
-                                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                                    .foregroundColor(.white)
-                            }
-
-                            Button(action: onReplayTutorial) {
-                                HStack(spacing: 12) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(Color.blue.opacity(0.2))
-                                            .frame(width: 44, height: 44)
-                                        Image(systemName: "arrow.clockwise.circle.fill")
-                                            .font(.system(size: 22))
-                                            .foregroundColor(.blue)
-                                    }
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("Replay Tutorial")
-                                            .font(.system(size: 17, weight: .semibold))
-                                            .foregroundColor(.white)
-                                        Text("Show feature tips again")
-                                            .font(.system(size: 13))
-                                            .foregroundColor(.white.opacity(0.6))
-                                    }
-                                    Spacer()
-                                    Image(systemName: "chevron.right.circle.fill")
-                                        .font(.system(size: 24))
-                                        .foregroundColor(.white.opacity(0.4))
-                                }
-                            }
-                        }
-                        .padding(20)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.white.opacity(0.1))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                                )
-                        )
-                        .padding(.horizontal, 20)
 
                         Spacer(minLength: 40)
                     }
