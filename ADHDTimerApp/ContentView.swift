@@ -171,8 +171,10 @@ struct ContentView: View {
                     }) {
                         Text("Tutorial")
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                             .foregroundColor(.white.opacity(0.9))
-                            .padding(.horizontal, 12)
+                            .padding(.horizontal, 10)
                             .padding(.vertical, 8)
                             .background(Capsule().fill(Color.white.opacity(0.15)))
                     }
