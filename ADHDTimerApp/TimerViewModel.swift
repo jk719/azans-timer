@@ -180,9 +180,6 @@ class TimerViewModel: ObservableObject {
         if settings.tickSoundEnabled {
             soundManager.playTickSound()
         }
-
-        // Check for milestones
-        checkMilestones()
     }
 
     private func checkMilestones() {

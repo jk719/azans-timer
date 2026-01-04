@@ -246,17 +246,6 @@ struct ContentView: View {
                 .scrollIndicators(.hidden)
             }
 
-            // Milestone banner overlay
-            if !viewModel.milestoneMessage.isEmpty {
-                VStack {
-                    Spacer()
-                    milestoneBanner
-                        .padding(.bottom, 100)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-                .animation(.spring(), value: viewModel.milestoneMessage)
-            }
-
             // PIN verification overlay
             if viewModel.awaitingVerification {
                 PINEntryView(
@@ -3199,17 +3188,20 @@ struct EnhancedSessionRow: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 3) {
-                Text("\(session.actualTime / 60) min")
+                // Show actual time spent (round up to at least 1 min)
+                let minutes = max(1, (session.actualTime + 59) / 60)
+                Text("\(minutes) min")
                     .font(.system(size: 15, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
-                if session.finishedEarly {
+                // Show time saved as positive encouragement
+                if session.finishedEarly && session.timeSaved >= 60 {
                     HStack(spacing: 3) {
-                        Image(systemName: "bolt.fill")
+                        Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 10))
-                        Text("-\(session.timeSaved / 60)m")
+                        Text("Saved \(session.timeSaved / 60)m")
                             .font(.system(size: 11, weight: .semibold))
                     }
-                    .foregroundColor(.yellow)
+                    .foregroundColor(.green)
                 }
             }
         }
