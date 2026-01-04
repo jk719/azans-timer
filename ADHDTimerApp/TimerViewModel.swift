@@ -123,29 +123,29 @@ class TimerViewModel: ObservableObject {
     }
 
     var backgroundGradientColors: [Color] {
-        // Kid-friendly, soft gradient colors
-        // Idle state: Soft dreamy purple-blue (calming welcome screen)
+        // Bright & Playful gradient colors for kids with ADHD
+        // Idle state: Vivid purple-blue (exciting welcome screen)
         guard totalTime > 0 else {
-            return [Color(red: 0.55, green: 0.45, blue: 0.95), Color(red: 0.4, green: 0.7, blue: 0.95)]
+            return [Color(red: 0.55, green: 0.4, blue: 1.0), Color(red: 0.4, green: 0.6, blue: 1.0)]
         }
 
         let percentage = relativeProgress
 
         if percentage > 0.75 {
-            // Plenty of time: Calm sky blue - relaxed, no rush
-            return [Color(red: 0.4, green: 0.7, blue: 0.95), Color(red: 0.5, green: 0.8, blue: 0.9)]
+            // Plenty of time: Bright periwinkle blue - fresh and calm
+            return [Color(red: 0.45, green: 0.55, blue: 1.0), Color(red: 0.5, green: 0.7, blue: 1.0)]
         } else if percentage > 0.5 {
-            // Good time: Soft teal/mint - still comfortable
-            return [Color(red: 0.4, green: 0.8, blue: 0.75), Color(red: 0.5, green: 0.85, blue: 0.7)]
+            // Good time: Vibrant turquoise/cyan - energetic and uplifting
+            return [Color(red: 0.2, green: 0.85, blue: 0.9), Color(red: 0.3, green: 0.75, blue: 0.95)]
         } else if percentage > 0.25 {
-            // Getting there: Warm peach/apricot - gentle attention
-            return [Color(red: 1.0, green: 0.75, blue: 0.5), Color(red: 1.0, green: 0.65, blue: 0.45)]
+            // Getting there: Sunny orange - warm and attention-grabbing
+            return [Color(red: 1.0, green: 0.7, blue: 0.3), Color(red: 1.0, green: 0.55, blue: 0.35)]
         } else if percentage > 0.1 {
-            // Hurry up: Soft coral - friendly urgency
-            return [Color(red: 1.0, green: 0.55, blue: 0.5), Color(red: 1.0, green: 0.5, blue: 0.55)]
+            // Hurry up: Bright coral - friendly urgency
+            return [Color(red: 1.0, green: 0.45, blue: 0.45), Color(red: 1.0, green: 0.4, blue: 0.5)]
         } else {
-            // Almost done: Warm pink-red - excitement to finish!
-            return [Color(red: 1.0, green: 0.45, blue: 0.5), Color(red: 0.95, green: 0.4, blue: 0.55)]
+            // Almost done: Vibrant magenta-pink - exciting finish!
+            return [Color(red: 1.0, green: 0.35, blue: 0.55), Color(red: 0.95, green: 0.3, blue: 0.65)]
         }
     }
 

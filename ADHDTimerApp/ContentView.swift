@@ -993,12 +993,12 @@ struct ContentView: View {
     }
 
     private var presetButtons: some View {
-        // Kid-friendly, playful colors that parents will approve of
+        // Bright & Playful colors for kids
         let presets: [(title: String, icon: String, minutes: Int, color: Color, activity: ActivityType)] = [
-            ("iPad", "ipad", settings.ipadTime, Color(red: 0.6, green: 0.5, blue: 0.95), .ipad),           // Playful purple
-            ("Reading", "book.fill", settings.readingTime, Color(red: 0.35, green: 0.75, blue: 0.7), .reading),  // Calm teal
-            ("Shower", "drop.fill", settings.showerTime, Color(red: 0.45, green: 0.7, blue: 0.95), .shower),    // Soft sky blue
-            ("Homework", "pencil.and.ruler.fill", settings.homeworkTime, Color(red: 0.95, green: 0.6, blue: 0.45), .homework) // Warm peach
+            ("iPad", "ipad", settings.ipadTime, Color(red: 0.6, green: 0.4, blue: 1.0), .ipad),           // Vibrant purple
+            ("Reading", "book.fill", settings.readingTime, Color(red: 0.2, green: 0.8, blue: 0.85), .reading),  // Bright turquoise
+            ("Shower", "drop.fill", settings.showerTime, Color(red: 0.35, green: 0.65, blue: 1.0), .shower),    // Bright blue
+            ("Homework", "pencil.and.ruler.fill", settings.homeworkTime, Color(red: 1.0, green: 0.6, blue: 0.25), .homework) // Sunny orange
         ]
 
         let radius: CGFloat = 120
@@ -1027,13 +1027,13 @@ struct ContentView: View {
                     Circle()
                         .fill(
                             LinearGradient(
-                                colors: [Color(red: 0.95, green: 0.5, blue: 0.65), Color(red: 0.9, green: 0.45, blue: 0.7)],
+                                colors: [Color(red: 1.0, green: 0.4, blue: 0.6), Color(red: 0.9, green: 0.35, blue: 0.75)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
                         .frame(width: 100, height: 100)
-                        .shadow(color: Color(red: 0.95, green: 0.5, blue: 0.65).opacity(0.5), radius: 15, x: 0, y: 8)
+                        .shadow(color: Color(red: 1.0, green: 0.4, blue: 0.6).opacity(0.5), radius: 15, x: 0, y: 8)
 
                     Circle()
                         .stroke(
@@ -1271,7 +1271,7 @@ struct ContentView: View {
             Capsule()
                 .fill(
                     LinearGradient(
-                        colors: [Color(red: 0.35, green: 0.25, blue: 0.55), Color(red: 0.25, green: 0.2, blue: 0.45)],
+                        colors: [Color(red: 0.5, green: 0.35, blue: 0.85), Color(red: 0.4, green: 0.3, blue: 0.75)],
                         startPoint: .top,
                         endPoint: .bottom
                     )
@@ -1965,12 +1965,12 @@ struct PINSetupView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Multi-color gradient background
+                // Vibrant purple gradient background
                 LinearGradient(
                     colors: [
-                        Color(red: 0.25, green: 0.2, blue: 0.4),
-                        Color(red: 0.2, green: 0.18, blue: 0.35),
-                        Color(red: 0.15, green: 0.15, blue: 0.3)
+                        Color(red: 0.45, green: 0.35, blue: 0.7),
+                        Color(red: 0.4, green: 0.32, blue: 0.65),
+                        Color(red: 0.35, green: 0.3, blue: 0.6)
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -2179,12 +2179,12 @@ struct CustomTimerPickerView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Fun gradient background
+                // Vibrant gradient background
                 LinearGradient(
                     colors: [
-                        Color(red: 0.95, green: 0.45, blue: 0.6),
-                        Color(red: 0.85, green: 0.4, blue: 0.75),
-                        Color(red: 0.7, green: 0.45, blue: 0.9)
+                        Color(red: 1.0, green: 0.4, blue: 0.55),
+                        Color(red: 0.9, green: 0.35, blue: 0.7),
+                        Color(red: 0.7, green: 0.4, blue: 0.95)
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -2406,12 +2406,12 @@ struct EditTimerSheetView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Fun gradient background
+                // Vibrant gradient background
                 LinearGradient(
                     colors: [
-                        Color(red: 0.4, green: 0.5, blue: 0.95),
-                        Color(red: 0.5, green: 0.4, blue: 0.85),
-                        Color(red: 0.6, green: 0.35, blue: 0.9)
+                        Color(red: 0.45, green: 0.5, blue: 1.0),
+                        Color(red: 0.55, green: 0.4, blue: 0.95),
+                        Color(red: 0.65, green: 0.35, blue: 1.0)
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -2636,12 +2636,12 @@ struct SettingsSheetView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Multi-color gradient background
+                // Vibrant purple-blue gradient background
                 LinearGradient(
                     colors: [
-                        Color(red: 0.3, green: 0.25, blue: 0.55),
-                        Color(red: 0.25, green: 0.3, blue: 0.6),
-                        Color(red: 0.2, green: 0.25, blue: 0.5)
+                        Color(red: 0.45, green: 0.35, blue: 0.85),
+                        Color(red: 0.4, green: 0.45, blue: 0.9),
+                        Color(red: 0.35, green: 0.4, blue: 0.85)
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -2982,12 +2982,12 @@ struct HistorySheetView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Multi-color gradient background
+                // Vibrant blue-teal gradient background
                 LinearGradient(
                     colors: [
-                        Color(red: 0.2, green: 0.35, blue: 0.5),
-                        Color(red: 0.25, green: 0.3, blue: 0.55),
-                        Color(red: 0.2, green: 0.25, blue: 0.45)
+                        Color(red: 0.3, green: 0.55, blue: 0.8),
+                        Color(red: 0.35, green: 0.5, blue: 0.85),
+                        Color(red: 0.3, green: 0.45, blue: 0.75)
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -3235,12 +3235,12 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            // Fun gradient background
+            // Vibrant gradient background
             LinearGradient(
                 colors: [
-                    Color(red: 0.4, green: 0.3, blue: 0.9),
-                    Color(red: 0.6, green: 0.3, blue: 0.85),
-                    Color(red: 0.5, green: 0.4, blue: 0.95)
+                    Color(red: 0.5, green: 0.35, blue: 1.0),
+                    Color(red: 0.65, green: 0.35, blue: 0.95),
+                    Color(red: 0.55, green: 0.4, blue: 1.0)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing

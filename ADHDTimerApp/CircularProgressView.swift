@@ -158,26 +158,26 @@ struct CircularProgressView: View {
     }
 
     private var progressColors: [Color] {
-        // Kid-friendly, softer colors that match the app palette
+        // Bright & Playful colors that match the app palette
         if relativeProgress > 0.5 {
-            // Calm sky blue - plenty of time, relaxed
-            return [Color(red: 0.45, green: 0.75, blue: 0.95), Color(red: 0.55, green: 0.8, blue: 0.95)]
+            // Bright blue-cyan - plenty of time, fresh and engaging
+            return [Color(red: 0.3, green: 0.7, blue: 1.0), Color(red: 0.2, green: 0.85, blue: 0.95)]
         } else if relativeProgress > 0.25 {
-            // Warm peach - getting there, gentle nudge
-            return [Color(red: 1.0, green: 0.7, blue: 0.5), Color(red: 1.0, green: 0.6, blue: 0.45)]
+            // Sunny orange - getting there, energetic
+            return [Color(red: 1.0, green: 0.65, blue: 0.25), Color(red: 1.0, green: 0.5, blue: 0.3)]
         } else {
-            // Soft coral-pink - almost done, exciting finish!
-            return [Color(red: 1.0, green: 0.5, blue: 0.55), Color(red: 0.95, green: 0.55, blue: 0.6)]
+            // Vibrant coral-pink - almost done, exciting finish!
+            return [Color(red: 1.0, green: 0.4, blue: 0.5), Color(red: 1.0, green: 0.35, blue: 0.6)]
         }
     }
 
     private var currentColor: Color {
         if relativeProgress > 0.5 {
-            return Color(red: 0.5, green: 0.8, blue: 1.0) // Soft sky blue
+            return Color(red: 0.3, green: 0.8, blue: 1.0) // Bright cyan-blue
         } else if relativeProgress > 0.25 {
-            return Color(red: 1.0, green: 0.65, blue: 0.45) // Warm peach
+            return Color(red: 1.0, green: 0.6, blue: 0.2) // Sunny orange
         } else {
-            return Color(red: 1.0, green: 0.5, blue: 0.55) // Soft coral
+            return Color(red: 1.0, green: 0.4, blue: 0.55) // Vibrant coral
         }
     }
 
@@ -263,8 +263,9 @@ struct ProgressMarker: View {
 
 #Preview {
     ZStack {
+        // Vibrant turquoise (50% timer state)
         LinearGradient(
-            colors: [Color(red: 0.4, green: 0.5, blue: 0.9), Color(red: 0.5, green: 0.7, blue: 0.95)],
+            colors: [Color(red: 0.2, green: 0.85, blue: 0.9), Color(red: 0.3, green: 0.75, blue: 0.95)],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
