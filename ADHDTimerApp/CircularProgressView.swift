@@ -41,6 +41,27 @@ struct CircularProgressView: View {
         return positions
     }
 
+    // Progress markers that FILL UP as time passes (positive reinforcement)
+    private var progressMarkerCount: Int {
+        guard totalSeconds > 0 else { return 0 }
+        if totalSeconds <= 120 { // 2 min or less
+            return max(2, totalSeconds / 30)  // Every 30 seconds
+        } else if totalSeconds <= 600 { // 10 min or less
+            return totalSeconds / 60  // Every minute
+        } else if totalSeconds <= 1800 { // 30 min or less
+            return min(30, totalSeconds / 60)  // Every minute (max 30)
+        } else {
+            return totalSeconds / 120  // Every 2 minutes for long timers
+        }
+    }
+
+    private var filledMarkerCount: Int {
+        guard totalSeconds > 0, progressMarkerCount > 0 else { return 0 }
+        let elapsed = totalSeconds - Int(Double(totalSeconds) * relativeProgress)
+        let interval = totalSeconds / progressMarkerCount
+        return min(progressMarkerCount, elapsed / max(1, interval))
+    }
+
     var body: some View {
         ZStack {
             // Outer glow ring
@@ -66,9 +87,19 @@ struct CircularProgressView: View {
                 SegmentMarker(position: position, isHalfway: position == 0.5)
             }
 
-            // Remaining time arc (shrinks as time runs out) - bouncy animation
+            // Progress markers (fill up as time passes - positive reinforcement!)
+            ForEach(0..<progressMarkerCount, id: \.self) { index in
+                ProgressMarker(
+                    index: index,
+                    totalCount: progressMarkerCount,
+                    isFilled: index < filledMarkerCount,
+                    color: currentColor
+                )
+            }
+
+            // Progress arc (fills up as time passes - positive reinforcement!)
             Circle()
-                .trim(from: 0, to: CGFloat(progress))
+                .trim(from: 0, to: CGFloat(1 - relativeProgress))
                 .stroke(
                     Color.white,
                     style: StrokeStyle(lineWidth: 24, lineCap: .round)
@@ -77,7 +108,7 @@ struct CircularProgressView: View {
                 .frame(width: 260, height: 260)
                 .shadow(color: currentColor, radius: 8, x: 0, y: 0)
                 .shadow(color: currentColor.opacity(0.6), radius: 20, x: 0, y: 0)
-                .animation(.spring(response: 0.4, dampingFraction: 0.5, blendDuration: 0), value: progress)
+                .animation(.spring(response: 0.4, dampingFraction: 0.5, blendDuration: 0), value: relativeProgress)
 
             // Center content
             VStack(spacing: 8) {
@@ -183,16 +214,70 @@ struct SegmentMarker: View {
     }
 }
 
+// Progress marker that fills up as time passes (positive reinforcement)
+struct ProgressMarker: View {
+    let index: Int
+    let totalCount: Int
+    let isFilled: Bool
+    let color: Color
+
+    @State private var scale: CGFloat = 1.0
+    @State private var hasAnimated: Bool = false
+
+    var body: some View {
+        let position = Double(index) / Double(max(1, totalCount))
+        let angle = (position * 360) - 90 // Start from top
+        let radius: CGFloat = 150 // Outside the main ring
+
+        Circle()
+            .fill(isFilled ? color : Color.white.opacity(0.15))
+            .frame(width: 10, height: 10)
+            .scaleEffect(scale)
+            .offset(
+                x: cos(angle * .pi / 180) * radius,
+                y: sin(angle * .pi / 180) * radius
+            )
+            .shadow(color: isFilled ? color.opacity(0.8) : .clear, radius: 6)
+            .onChange(of: isFilled) { nowFilled in
+                if nowFilled && !hasAnimated {
+                    hasAnimated = true
+                    // Satisfying pop animation when filling
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.4)) {
+                        scale = 1.6
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) {
+                            scale = 1.0
+                        }
+                    }
+                }
+            }
+            .onAppear {
+                // Reset animation state when view appears
+                if isFilled {
+                    hasAnimated = true
+                }
+            }
+    }
+}
+
 #Preview {
     ZStack {
         LinearGradient(
-            colors: [Color(red: 0.1, green: 0.1, blue: 0.2), Color(red: 0.2, green: 0.1, blue: 0.3)],
+            colors: [Color(red: 0.4, green: 0.5, blue: 0.9), Color(red: 0.5, green: 0.7, blue: 0.95)],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
         .ignoresSafeArea()
 
-        CircularProgressView(progress: 0.65, timeString: "4:32", totalSeconds: 600, activityIcon: "book.fill")
-            .frame(width: 280, height: 280)
+        // Show 5 min timer at 50% complete (2.5 min done, 5 markers, 2-3 filled)
+        CircularProgressView(
+            progress: 0.5,
+            relativeProgress: 0.5,
+            timeString: "2:30",
+            totalSeconds: 300,
+            activityIcon: "book.fill"
+        )
+        .frame(width: 320, height: 320)
     }
 }

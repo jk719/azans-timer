@@ -76,9 +76,9 @@ class TimerViewModel: ObservableObject {
     private var announcedMilestones: Set<Int> = []
 
     var progress: Double {
-        // Full circle represents 1 hour (3600 seconds)
-        let oneHour = 3600.0
-        return Double(timeRemaining) / oneHour
+        // Full circle represents the timer duration (visible movement each second)
+        guard totalTime > 0 else { return 0 }
+        return Double(timeRemaining) / Double(totalTime)
     }
 
     // Relative progress for background colors (based on time set, not hour)
