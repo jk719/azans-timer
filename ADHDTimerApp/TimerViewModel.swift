@@ -108,7 +108,7 @@ class TimerViewModel: ObservableObject {
         let percentage = relativeProgress
 
         if percentage > 0.9 {
-            return "Let's do this! 💪"
+            return "Let's do this!"
         } else if percentage > 0.75 {
             return "Great start!"
         } else if percentage > 0.5 {
