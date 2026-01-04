@@ -42,27 +42,34 @@ struct TimerSession: Codable, Identifiable {
 class TimerSettings: ObservableObject {
     static let shared = TimerSettings()
 
+    // iCloud Key-Value Storage for syncing across devices
+    private let iCloud = NSUbiquitousKeyValueStore.default
+
     @Published var ipadTime: Int {
         didSet {
             UserDefaults.standard.set(ipadTime, forKey: "ipadTime")
+            syncToiCloud(key: "ipadTime", value: ipadTime)
         }
     }
 
     @Published var readingTime: Int {
         didSet {
             UserDefaults.standard.set(readingTime, forKey: "readingTime")
+            syncToiCloud(key: "readingTime", value: readingTime)
         }
     }
 
     @Published var showerTime: Int {
         didSet {
             UserDefaults.standard.set(showerTime, forKey: "showerTime")
+            syncToiCloud(key: "showerTime", value: showerTime)
         }
     }
 
     @Published var homeworkTime: Int {
         didSet {
             UserDefaults.standard.set(homeworkTime, forKey: "homeworkTime")
+            syncToiCloud(key: "homeworkTime", value: homeworkTime)
         }
     }
 
@@ -77,6 +84,7 @@ class TimerSettings: ObservableObject {
     @Published var childName: String {
         didSet {
             UserDefaults.standard.set(childName, forKey: "childName")
+            syncToiCloud(key: "childName", value: childName)
         }
     }
 
@@ -111,6 +119,7 @@ class TimerSettings: ObservableObject {
     @Published var totalStars: Int {
         didSet {
             UserDefaults.standard.set(totalStars, forKey: "totalStars")
+            syncToiCloud(key: "totalStars", value: totalStars)
         }
     }
 
@@ -157,6 +166,8 @@ class TimerSettings: ObservableObject {
         didSet {
             if let encoded = try? JSONEncoder().encode(sessionHistory) {
                 UserDefaults.standard.set(encoded, forKey: "sessionHistory")
+                iCloud.set(encoded, forKey: "sessionHistory")
+                iCloud.synchronize()
             }
         }
     }
@@ -222,6 +233,96 @@ class TimerSettings: ObservableObject {
             self.sessionHistory = decoded
         } else {
             self.sessionHistory = []
+        }
+
+        // Set up iCloud sync listener
+        setupiCloudSync()
+    }
+
+    // MARK: - iCloud Sync
+
+    private func setupiCloudSync() {
+        // Listen for changes from other devices
+        NotificationCenter.default.addObserver(
+            forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
+            object: iCloud,
+            queue: .main
+        ) { [weak self] notification in
+            Task { @MainActor in
+                self?.handleiCloudChange(notification)
+            }
+        }
+        // Trigger initial sync
+        iCloud.synchronize()
+    }
+
+    private func syncToiCloud(key: String, value: Any) {
+        iCloud.set(value, forKey: key)
+        iCloud.synchronize()
+    }
+
+    private func handleiCloudChange(_ notification: Notification) {
+        // Get the keys that changed
+        guard let userInfo = notification.userInfo,
+              let changedKeys = userInfo[NSUbiquitousKeyValueStoreChangedKeysKey] as? [String] else {
+            return
+        }
+
+        for key in changedKeys {
+            switch key {
+            case "ipadTime":
+                if let value = iCloud.object(forKey: key) as? Int, value != ipadTime {
+                    ipadTime = value
+                }
+            case "readingTime":
+                if let value = iCloud.object(forKey: key) as? Int, value != readingTime {
+                    readingTime = value
+                }
+            case "showerTime":
+                if let value = iCloud.object(forKey: key) as? Int, value != showerTime {
+                    showerTime = value
+                }
+            case "homeworkTime":
+                if let value = iCloud.object(forKey: key) as? Int, value != homeworkTime {
+                    homeworkTime = value
+                }
+            case "childName":
+                if let value = iCloud.object(forKey: key) as? String, value != childName {
+                    childName = value
+                }
+            case "totalStars":
+                if let value = iCloud.object(forKey: key) as? Int, value != totalStars {
+                    totalStars = value
+                }
+            case "sessionHistory":
+                if let data = iCloud.object(forKey: key) as? Data {
+                    mergeSessionHistory(from: data)
+                }
+            default:
+                break
+            }
+        }
+    }
+
+    private func mergeSessionHistory(from iCloudData: Data) {
+        guard let iCloudSessions = try? JSONDecoder().decode([TimerSession].self, from: iCloudData) else {
+            return
+        }
+
+        // Merge: combine both, remove duplicates by ID, sort by date, keep 100
+        var merged = sessionHistory
+        for session in iCloudSessions {
+            if !merged.contains(where: { $0.id == session.id }) {
+                merged.append(session)
+            }
+        }
+        merged.sort { $0.completedAt > $1.completedAt }
+
+        // Only update if there are actual changes to avoid infinite loops
+        let newHistory = Array(merged.prefix(100))
+        if newHistory.count != sessionHistory.count ||
+           !newHistory.elementsEqual(sessionHistory, by: { $0.id == $1.id }) {
+            sessionHistory = newHistory
         }
     }
 }
