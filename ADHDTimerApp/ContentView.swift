@@ -1476,20 +1476,19 @@ struct PINEntryView: View {
 
     var body: some View {
         ZStack {
-            // Dark gradient overlay
+            // Vibrant purple-blue gradient (matches app idle state)
             LinearGradient(
                 colors: [
-                    Color(red: 0.1, green: 0.15, blue: 0.25).opacity(0.95),
-                    Color(red: 0.05, green: 0.1, blue: 0.2).opacity(0.98)
+                    Color(red: 0.55, green: 0.4, blue: 1.0),
+                    Color(red: 0.4, green: 0.6, blue: 1.0)
                 ],
-                startPoint: .top,
-                endPoint: .bottom
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
 
-            // Subtle floating decorations
+            // Floating decorations
             FloatingDecorationsView(isAnimating: isAnimating)
-                .opacity(0.5)
 
             VStack(spacing: 30) {
                 Spacer()
@@ -1498,7 +1497,7 @@ struct PINEntryView: View {
                 VStack(spacing: 12) {
                     ZStack {
                         Circle()
-                            .fill(Color.green.opacity(0.2))
+                            .fill(Color.orange.opacity(0.2))
                             .frame(width: 100, height: 100)
                             .scaleEffect(isAnimating ? 1.15 : 1.0)
                             .animation(
@@ -1511,7 +1510,7 @@ struct PINEntryView: View {
                             .font(.system(size: 55))
                             .foregroundStyle(
                                 LinearGradient(
-                                    colors: [.green, .green.opacity(0.7)],
+                                    colors: [.orange, .yellow],
                                     startPoint: .top,
                                     endPoint: .bottom
                                 )
@@ -1651,20 +1650,19 @@ struct QualityRatingView: View {
 
     var body: some View {
         ZStack {
-            // Dark gradient overlay
+            // Vibrant purple-blue gradient (matches app idle state)
             LinearGradient(
                 colors: [
-                    Color(red: 0.1, green: 0.15, blue: 0.25).opacity(0.95),
-                    Color(red: 0.05, green: 0.1, blue: 0.2).opacity(0.98)
+                    Color(red: 0.55, green: 0.4, blue: 1.0),
+                    Color(red: 0.4, green: 0.6, blue: 1.0)
                 ],
-                startPoint: .top,
-                endPoint: .bottom
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
 
-            // Subtle floating decorations
+            // Floating decorations
             FloatingDecorationsView(isAnimating: isAnimating)
-                .opacity(0.5)
 
             VStack(spacing: 24) {
                 Spacer()
@@ -1954,12 +1952,11 @@ struct PINSetupView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Vibrant purple gradient background
+                // Vibrant purple-blue gradient (matches app idle state)
                 LinearGradient(
                     colors: [
-                        Color(red: 0.45, green: 0.35, blue: 0.7),
-                        Color(red: 0.4, green: 0.32, blue: 0.65),
-                        Color(red: 0.35, green: 0.3, blue: 0.6)
+                        Color(red: 0.55, green: 0.4, blue: 1.0),
+                        Color(red: 0.4, green: 0.6, blue: 1.0)
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -3193,16 +3190,6 @@ struct EnhancedSessionRow: View {
                 Text("\(minutes) min")
                     .font(.system(size: 15, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
-                // Show time saved as positive encouragement
-                if session.finishedEarly && session.timeSaved >= 60 {
-                    HStack(spacing: 3) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 10))
-                        Text("Saved \(session.timeSaved / 60)m")
-                            .font(.system(size: 11, weight: .semibold))
-                    }
-                    .foregroundColor(.green)
-                }
             }
         }
         .padding(14)
