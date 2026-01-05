@@ -109,16 +109,18 @@ class TimerViewModel: ObservableObject {
 
         if percentage > 0.9 {
             return "Let's do this!"
-        } else if percentage > 0.75 {
+        } else if percentage > 0.7 {
             return "Great start!"
-        } else if percentage > 0.5 {
+        } else if percentage > 0.55 {
+            return "You're doing great!"
+        } else if percentage > 0.45 {
             return "Halfway there!"
         } else if percentage > 0.25 {
             return "Keep going!"
         } else if percentage > 0.1 {
             return "Almost done!"
         } else {
-            return "Final stretch! 🎯"
+            return "Final stretch!"
         }
     }
 
@@ -126,6 +128,11 @@ class TimerViewModel: ObservableObject {
         // Bright & Playful gradient colors for kids with ADHD
         // Idle state: Vivid purple-blue (exciting welcome screen)
         guard totalTime > 0 else {
+            return [Color(red: 0.55, green: 0.4, blue: 1.0), Color(red: 0.4, green: 0.6, blue: 1.0)]
+        }
+
+        // Completion state: Celebratory purple-blue (gender-neutral)
+        if timeRemaining == 0 {
             return [Color(red: 0.55, green: 0.4, blue: 1.0), Color(red: 0.4, green: 0.6, blue: 1.0)]
         }
 

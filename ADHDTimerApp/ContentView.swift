@@ -98,8 +98,9 @@ struct ContentView: View {
                         Text("\(settings.totalStars)")
                             .font(.system(size: 16, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
+                            .fixedSize(horizontal: true, vertical: false)
                     }
-                    .padding(.horizontal, 12)
+                    .padding(.horizontal, 10)
                     .padding(.vertical, 6)
                     .background(Capsule().fill(Color.white.opacity(0.15)))
                     .background(
@@ -135,8 +136,9 @@ struct ContentView: View {
                             Text("\(settings.currentStreak)")
                                 .font(.system(size: 16, weight: .bold, design: .rounded))
                                 .foregroundColor(.white)
+                                .fixedSize(horizontal: true, vertical: false)
                         }
-                        .padding(.horizontal, 12)
+                        .padding(.horizontal, 10)
                         .padding(.vertical, 6)
                         .background(Capsule().fill(Color.white.opacity(0.15)))
                         .background(
@@ -161,7 +163,7 @@ struct ContentView: View {
 
                     Spacer()
 
-                    // Tutorial button
+                    // Tutorial button (icon for compact screens)
                     Button(action: {
                         guard activeTutorialStep == nil else { return }
                         settings.resetTutorials()
@@ -169,14 +171,11 @@ struct ContentView: View {
                             activeTutorialStep = .startTimer
                         }
                     }) {
-                        Text("Tutorial")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                            .foregroundColor(.white.opacity(0.9))
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 8)
-                            .background(Capsule().fill(Color.white.opacity(0.15)))
+                        Image(systemName: "questionmark.circle.fill")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.8))
+                            .padding(12)
+                            .background(Circle().fill(Color.white.opacity(0.15)))
                     }
                     .opacity(activeTutorialStep != nil ? 0.5 : 1.0)
                     .disabled(activeTutorialStep != nil)
@@ -678,7 +677,7 @@ struct ContentView: View {
                                 )
                                 .scaleEffect(isAnimating ? 1.2 : 0.8)
                                 .rotationEffect(.degrees(isAnimating ? Double(index * 45) : Double(index * -45)))
-                                .opacity(isAnimating ? 0.9 : 0.5)
+                                .opacity(isAnimating ? 0.4 : 0.2)
                                 .animation(
                                     Animation.easeInOut(duration: Double.random(in: 1.0...2.0))
                                         .repeatForever(autoreverses: true)
@@ -751,65 +750,6 @@ struct ContentView: View {
                                         RoundedRectangle(cornerRadius: 16)
                                             .fill(Color.white.opacity(0.15))
                                     )
-                            }
-
-                            // Show time saved if finished early
-                            if let timeSaved = viewModel.timeSavedSeconds, timeSaved > 0 {
-                                let minutes = timeSaved / 60
-                                let seconds = timeSaved % 60
-                                HStack(spacing: 10) {
-                                    Image(systemName: "bolt.fill")
-                                        .font(.system(size: 22))
-                                        .foregroundStyle(
-                                            LinearGradient(
-                                                colors: [.yellow, .orange],
-                                                startPoint: .top,
-                                                endPoint: .bottom
-                                            )
-                                        )
-                                    Text(minutes > 0 ? "Finished \(minutes) min early!" : "Finished \(seconds) sec early!")
-                                        .font(.system(size: 18, weight: .black, design: .rounded))
-                                        .foregroundColor(.white)
-                                    Image(systemName: "bolt.fill")
-                                        .font(.system(size: 22))
-                                        .foregroundStyle(
-                                            LinearGradient(
-                                                colors: [.yellow, .orange],
-                                                startPoint: .top,
-                                                endPoint: .bottom
-                                            )
-                                        )
-                                }
-                                .padding(.horizontal, 24)
-                                .padding(.vertical, 14)
-                                .background(
-                                    Capsule()
-                                        .fill(
-                                            LinearGradient(
-                                                colors: [Color.orange.opacity(0.3), Color.yellow.opacity(0.2)],
-                                                startPoint: .leading,
-                                                endPoint: .trailing
-                                            )
-                                        )
-                                        .overlay(
-                                            Capsule()
-                                                .stroke(
-                                                    LinearGradient(
-                                                        colors: [.yellow, .orange],
-                                                        startPoint: .leading,
-                                                        endPoint: .trailing
-                                                    ),
-                                                    lineWidth: 2
-                                                )
-                                        )
-                                )
-                                .shadow(color: .orange.opacity(0.3), radius: 8, x: 0, y: 4)
-                                .scaleEffect(isAnimating ? 1.05 : 0.98)
-                                .animation(
-                                    Animation.easeInOut(duration: 0.6)
-                                        .repeatForever(autoreverses: true),
-                                    value: isAnimating
-                                )
                             }
 
                             // Stars earned celebration (only show if stars were earned via rating)
@@ -904,8 +844,8 @@ struct ContentView: View {
                                 .fill(
                                     LinearGradient(
                                         colors: [
-                                            Color.black.opacity(0.4),
-                                            Color.black.opacity(0.3)
+                                            Color.black.opacity(0.85),
+                                            Color.black.opacity(0.75)
                                         ],
                                         startPoint: .top,
                                         endPoint: .bottom
@@ -1420,9 +1360,11 @@ struct SessionRow: View {
                 Text(session.activity)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.white)
+                    .lineLimit(1)
                 Text(formatDate(session.completedAt))
                     .font(.system(size: 13))
                     .foregroundColor(.white.opacity(0.6))
+                    .lineLimit(1)
             }
 
             Spacer()
@@ -1716,6 +1658,8 @@ struct QualityRatingView: View {
                         Text("\(streakMultiplier, specifier: "%.1f")x Streak Bonus!")
                             .font(.system(size: 16, weight: .bold, design: .rounded))
                             .foregroundColor(.orange)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
@@ -1769,9 +1713,13 @@ struct RatingButton: View {
                     Text(rating.title)
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
 
                     Text(rating.subtitle)
                         .font(.system(size: 13, weight: .medium))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                         .foregroundColor(.white.opacity(0.7))
                 }
 
@@ -2736,9 +2684,12 @@ struct SettingsSheetView: View {
                                             Text(childName)
                                                 .font(.system(size: 17, weight: .semibold))
                                                 .foregroundColor(.white)
+                                                .lineLimit(1)
+                                                .minimumScaleFactor(0.85)
                                             Text("Tap to change name")
                                                 .font(.system(size: 13))
                                                 .foregroundColor(.white.opacity(0.6))
+                                                .lineLimit(1)
                                         }
                                         Spacer()
                                         Image(systemName: "pencil.circle.fill")
@@ -2768,6 +2719,7 @@ struct SettingsSheetView: View {
                                 Text("Sound Settings")
                                     .font(.system(size: 18, weight: .bold, design: .rounded))
                                     .foregroundColor(.white)
+                                    .lineLimit(1)
                             }
 
                             Toggle(isOn: $tickSoundEnabled) {
@@ -2784,9 +2736,12 @@ struct SettingsSheetView: View {
                                         Text("Tick Sound")
                                             .font(.system(size: 17, weight: .semibold))
                                             .foregroundColor(.white)
+                                            .lineLimit(1)
                                         Text("Soft tick every second")
                                             .font(.system(size: 13))
                                             .foregroundColor(.white.opacity(0.6))
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.8)
                                     }
                                 }
                             }
@@ -2812,6 +2767,7 @@ struct SettingsSheetView: View {
                                 Text("Parent Controls")
                                     .font(.system(size: 18, weight: .bold, design: .rounded))
                                     .foregroundColor(.white)
+                                    .lineLimit(1)
                             }
 
                             Button(action: onPINSetupTap) {
@@ -2828,9 +2784,12 @@ struct SettingsSheetView: View {
                                         Text(isVerificationEnabled ? "Change PIN" : "Set Up PIN")
                                             .font(.system(size: 17, weight: .semibold))
                                             .foregroundColor(.white)
+                                            .lineLimit(1)
                                         Text(isVerificationEnabled ? "Verification is active" : "Verify task completion")
                                             .font(.system(size: 13))
                                             .foregroundColor(.white.opacity(0.6))
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.8)
                                     }
                                     Spacer()
                                     if isVerificationEnabled {
@@ -3177,9 +3136,11 @@ struct EnhancedSessionRow: View {
                 Text(session.activity)
                     .font(.system(size: 16, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
+                    .lineLimit(1)
                 Text(session.completedAt, style: .relative)
                     .font(.system(size: 12))
                     .foregroundColor(.white.opacity(0.5))
+                    .lineLimit(1)
             }
 
             Spacer()
@@ -3293,6 +3254,8 @@ struct OnboardingView: View {
                         Text("What's your name?")
                             .font(.system(size: 22, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
 
                     TextField("Type your name...", text: $childName)
