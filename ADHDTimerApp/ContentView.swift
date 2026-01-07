@@ -99,8 +99,10 @@ struct TutorialTooltip: View {
             Text(text)
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .foregroundColor(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                .fixedSize(horizontal: true, vertical: false)
+                .lineLimit(1)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 10)
                         .fill(Color.black.opacity(0.85))
@@ -112,6 +114,314 @@ struct TutorialTooltip: View {
                     .frame(width: 14, height: 8)
             }
         }
+    }
+}
+
+// Tutorial explanation card shown at bottom during tutorial
+struct TutorialExplanationCard: View {
+    let icon: String
+    let title: String
+    let bullets: [String]
+    let stepNumber: Int
+    let totalSteps: Int
+    let onNext: () -> Void
+    let onSkip: () -> Void
+
+    var body: some View {
+        VStack(spacing: 16) {
+            // Icon and title
+            HStack(spacing: 10) {
+                Text(icon)
+                    .font(.system(size: 28))
+
+                Text(title)
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+            }
+
+            // Bullet points
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(bullets, id: \.self) { bullet in
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.green, .green.opacity(0.7)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+
+                        Text(bullet)
+                            .font(.system(size: 15, weight: .medium, design: .rounded))
+                            .foregroundColor(.white.opacity(0.9))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+
+            // Bottom row: Next button and step counter
+            HStack {
+                Button(action: onNext) {
+                    HStack(spacing: 8) {
+                        Text(stepNumber == totalSteps ? "Done" : "Next")
+                            .font(.system(size: 17, weight: .bold, design: .rounded))
+                        if stepNumber < totalSteps {
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 14, weight: .bold))
+                        }
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [.green, .green.opacity(0.7)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                    )
+                    .shadow(color: .green.opacity(0.4), radius: 8, x: 0, y: 4)
+                }
+
+                Spacer()
+
+                Text("\(stepNumber)/\(totalSteps)")
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white.opacity(0.5))
+            }
+
+            // Skip tutorial link
+            Button(action: onSkip) {
+                Text("Skip Tutorial")
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.5))
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 18)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.black.opacity(0.85))
+                .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: -5)
+        )
+        .padding(.horizontal, 16)
+    }
+}
+
+// Tutorial content for each step
+struct TutorialContent {
+    let icon: String
+    let title: String
+    let bullets: [String]
+
+    static func content(for step: TutorialStep) -> TutorialContent {
+        switch step {
+        case .startTimer:
+            return TutorialContent(
+                icon: "🎯",
+                title: "Pick an Activity",
+                bullets: [
+                    "Tap any activity to start a timer",
+                    "Each has a preset time you can customize",
+                    "Colors change as time counts down"
+                ]
+            )
+        case .clockBadge:
+            return TutorialContent(
+                icon: "⏱️",
+                title: "Customize Time",
+                bullets: [
+                    "Tap the clock badge to change duration",
+                    "Set the perfect time for each task",
+                    "Your changes are saved automatically"
+                ]
+            )
+        case .customTimer:
+            return TutorialContent(
+                icon: "➕",
+                title: "Create Your Own",
+                bullets: [
+                    "Make a timer for any activity",
+                    "Choose your own duration",
+                    "Great for unique tasks"
+                ]
+            )
+        case .starsBadge:
+            return TutorialContent(
+                icon: "⭐",
+                title: "Earn Stars!",
+                bullets: [
+                    "Complete tasks to earn stars",
+                    "Parents verify your work for bonus points",
+                    "Collect stars to track your progress"
+                ]
+            )
+        case .streakBadge:
+            return TutorialContent(
+                icon: "🔥",
+                title: "Build Streaks!",
+                bullets: [
+                    "Complete tasks daily to build streaks",
+                    "Streaks multiply your star rewards",
+                    "7-day streak = 2x bonus!"
+                ]
+            )
+        case .doneButton:
+            return TutorialContent(
+                icon: "✅",
+                title: "Finish Early",
+                bullets: [
+                    "Tap when you complete your task",
+                    "Finishing early is great!",
+                    "Parents will verify your work"
+                ]
+            )
+        case .historyButton:
+            return TutorialContent(
+                icon: "📊",
+                title: "Track Progress",
+                bullets: [
+                    "See all your completed tasks",
+                    "Watch your stars grow over time",
+                    "Celebrate your achievements"
+                ]
+            )
+        case .settingsButton:
+            return TutorialContent(
+                icon: "⚙️",
+                title: "App Settings",
+                bullets: [
+                    "Customize sounds and preferences",
+                    "Parents can set up verification PIN",
+                    "Adjust default timer durations"
+                ]
+            )
+        case .pinSetupRow:
+            return TutorialContent(
+                icon: "🔐",
+                title: "Parent Verification",
+                bullets: [
+                    "Parents enter PIN to verify tasks",
+                    "Ensures tasks are truly complete",
+                    "Awards bonus stars for great work"
+                ]
+            )
+        }
+    }
+
+    static let totalSteps = 9
+}
+
+// Tutorial completion celebration screen
+struct TutorialCompleteView: View {
+    @State private var checkScale: CGFloat = 0
+    @State private var showConfetti = false
+    @State private var textOpacity: Double = 0
+
+    var body: some View {
+        ZStack {
+            // Green gradient background
+            LinearGradient(
+                colors: [Color(red: 0.2, green: 0.8, blue: 0.4), Color(red: 0.1, green: 0.6, blue: 0.3)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            // Confetti particles
+            if showConfetti {
+                ConfettiView()
+            }
+
+            VStack(spacing: 24) {
+                // Animated checkmark
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 120))
+                    .foregroundColor(.white)
+                    .scaleEffect(checkScale)
+                    .shadow(color: .black.opacity(0.2), radius: 10)
+
+                Text("You're all set!")
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .opacity(textOpacity)
+
+                Text("You know how to use the app!")
+                    .font(.system(size: 18, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.9))
+                    .opacity(textOpacity)
+            }
+        }
+        .onAppear {
+            // Haptic
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.success)
+
+            // Animate checkmark
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
+                checkScale = 1.0
+            }
+
+            // Show text after checkmark
+            withAnimation(.easeOut(duration: 0.4).delay(0.3)) {
+                textOpacity = 1.0
+            }
+
+            // Show confetti
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                showConfetti = true
+            }
+        }
+    }
+}
+
+// Confetti animation for celebrations
+struct ConfettiView: View {
+    let colors: [Color] = [.yellow, .green, .blue, .pink, .orange, .purple, .cyan, .mint]
+
+    var body: some View {
+        GeometryReader { geo in
+            ForEach(0..<50, id: \.self) { i in
+                ConfettiPiece(
+                    color: colors[i % colors.count],
+                    startX: CGFloat.random(in: 0...geo.size.width),
+                    delay: Double.random(in: 0...0.5)
+                )
+            }
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+struct ConfettiPiece: View {
+    let color: Color
+    let startX: CGFloat
+    let delay: Double
+    @State private var yOffset: CGFloat = -50
+    @State private var rotation: Double = 0
+    @State private var opacity: Double = 1.0
+
+    var body: some View {
+        Rectangle()
+            .fill(color)
+            .frame(width: 10, height: 10)
+            .rotationEffect(.degrees(rotation))
+            .position(x: startX, y: yOffset)
+            .opacity(opacity)
+            .onAppear {
+                withAnimation(.linear(duration: Double.random(in: 2.5...4)).delay(delay)) {
+                    yOffset = 900
+                    rotation = Double.random(in: 360...720)
+                }
+                withAnimation(.easeIn(duration: 1.0).delay(delay + 2.0)) {
+                    opacity = 0
+                }
+            }
     }
 }
 
@@ -138,6 +448,8 @@ struct ContentView: View {
     // Interactive tutorial state
     @State private var activeTutorialStep: TutorialStep? = nil
     @State private var tutorialPulse: Bool = false
+    @State private var showTutorialComplete: Bool = false
+    @State private var pinSetupFromTutorial: Bool = false
 
     var body: some View {
         ZStack {
@@ -154,10 +466,16 @@ struct ContentView: View {
                 HStack {
                     Button(action: {
                         if activeTutorialStep == .historyButton {
-                            // Tutorial mode - advance to settings button
+                            // Tutorial mode - show history briefly then advance
                             settings.hasSeenHistoryTip = true
-                            withAnimation {
-                                activeTutorialStep = .settingsButton
+                            showingHistory = true
+
+                            // Auto-dismiss after 2.5 seconds and advance tutorial
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                                showingHistory = false
+                                withAnimation {
+                                    activeTutorialStep = .settingsButton
+                                }
                             }
                         } else if activeTutorialStep == nil {
                             // Normal mode
@@ -185,11 +503,8 @@ struct ContentView: View {
                     .zIndex(activeTutorialStep == .historyButton ? 100 : 0)
                     .overlay(alignment: .bottom) {
                         if activeTutorialStep == .historyButton {
-                            VStack(spacing: 4) {
-                                TutorialTooltip(text: "See progress", caretPosition: .bottom)
-                                TutorialHandPointer(direction: .up)
-                            }
-                            .offset(y: 65)
+                            TutorialHandPointer(direction: .up)
+                                .offset(y: 50)
                         }
                     }
 
@@ -234,11 +549,8 @@ struct ContentView: View {
                     .zIndex(activeTutorialStep == .starsBadge ? 100 : 0)
                     .overlay(alignment: .bottom) {
                         if activeTutorialStep == .starsBadge {
-                            VStack(spacing: 4) {
-                                TutorialTooltip(text: "Your stars!", caretPosition: .bottom)
-                                TutorialHandPointer(direction: .up)
-                            }
-                            .offset(y: 60)
+                            TutorialHandPointer(direction: .up)
+                                .offset(y: 50)
                         }
                     }
 
@@ -276,11 +588,8 @@ struct ContentView: View {
                         .zIndex(activeTutorialStep == .streakBadge ? 100 : 0)
                         .overlay(alignment: .bottom) {
                             if activeTutorialStep == .streakBadge {
-                                VStack(spacing: 4) {
-                                    TutorialTooltip(text: "Daily streak!", caretPosition: .bottom)
-                                    TutorialHandPointer(direction: .up)
-                                }
-                                .offset(y: 60)
+                                TutorialHandPointer(direction: .up)
+                                    .offset(y: 50)
                             }
                         }
                     }
@@ -337,11 +646,8 @@ struct ContentView: View {
                     .zIndex(activeTutorialStep == .settingsButton ? 100 : 0)
                     .overlay(alignment: .bottom) {
                         if activeTutorialStep == .settingsButton {
-                            VStack(spacing: 4) {
-                                TutorialTooltip(text: "Settings", caretPosition: .bottom)
-                                TutorialHandPointer(direction: .up)
-                            }
-                            .offset(y: 65)
+                            TutorialHandPointer(direction: .up)
+                                .offset(y: 50)
                         }
                     }
                 }
@@ -427,27 +733,42 @@ struct ContentView: View {
                 )
             }
 
-            // Skip Tutorial button - subtle, always at bottom during tutorial
-            if activeTutorialStep != nil && activeTutorialStep != .pinSetupRow {
+            // Tutorial explanation card - dynamically positioned based on highlighted element
+            if let step = activeTutorialStep, step != .pinSetupRow {
+                let content = TutorialContent.content(for: step)
+                let cardAtTop = tutorialMessagePosition(for: step) == .top
                 VStack {
-                    Spacer()
-                    Button(action: {
-                        withAnimation {
-                            activeTutorialStep = nil
+                    if !cardAtTop {
+                        Spacer()
+                    }
+                    TutorialExplanationCard(
+                        icon: content.icon,
+                        title: content.title,
+                        bullets: content.bullets,
+                        stepNumber: step.rawValue,
+                        totalSteps: TutorialContent.totalSteps,
+                        onNext: {
+                            advanceTutorial(from: step)
+                        },
+                        onSkip: {
+                            withAnimation {
+                                activeTutorialStep = nil
+                            }
                         }
-                    }) {
-                        Text("Skip")
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
-                            .foregroundColor(.white.opacity(0.5))
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 6)
-                            .background(
-                                Capsule()
-                                    .fill(Color.white.opacity(0.1))
-                            )
+                    )
+                    if cardAtTop {
+                        Spacer()
                     }
                 }
-                .padding(.bottom, 30)
+                .padding(cardAtTop ? .top : .bottom, 20)
+                .transition(.move(edge: cardAtTop ? .top : .bottom).combined(with: .opacity))
+            }
+
+            // Tutorial completion celebration
+            if showTutorialComplete {
+                TutorialCompleteView()
+                    .transition(.opacity)
+                    .zIndex(1000)
             }
         }
         .sheet(isPresented: $viewModel.showCustomPicker) {
@@ -472,7 +793,7 @@ struct ContentView: View {
             })
         }
         .fullScreenCover(isPresented: $showingOnboarding) {
-            OnboardingView(isPresented: $showingOnboarding)
+            PagedOnboardingView(isPresented: $showingOnboarding)
         }
         .alert("Stop Timer?", isPresented: $showingCancelConfirm) {
             Button("Stop", role: .destructive) { viewModel.resetTimer() }
@@ -496,6 +817,20 @@ struct ContentView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                     withAnimation(.spring()) {
                         activeTutorialStep = .startTimer
+                    }
+                }
+            }
+        }
+        .onChange(of: showingPINSetup) { isShowing in
+            // Show celebration when PIN setup closes (if initiated from tutorial)
+            if !isShowing && pinSetupFromTutorial {
+                pinSetupFromTutorial = false
+                showTutorialComplete = true
+
+                // Auto-dismiss celebration after 3 seconds
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                    withAnimation {
+                        showTutorialComplete = false
                     }
                 }
             }
@@ -535,6 +870,43 @@ struct ContentView: View {
         case .historyButton: return .purple
         case .settingsButton: return .gray
         case .pinSetupRow: return .orange
+        }
+    }
+
+    private func advanceTutorial(from step: TutorialStep) {
+        withAnimation(.spring()) {
+            switch step {
+            case .startTimer:
+                settings.hasSeenClockBadgeTip = true
+                activeTutorialStep = .clockBadge
+            case .clockBadge:
+                activeTutorialStep = .customTimer
+            case .customTimer:
+                activeTutorialStep = .starsBadge
+            case .starsBadge:
+                settings.hasSeenStarsTip = true
+                // Skip streakBadge if user has no streak
+                if settings.currentStreak > 0 {
+                    activeTutorialStep = .streakBadge
+                } else {
+                    activeTutorialStep = .doneButton
+                }
+            case .streakBadge:
+                activeTutorialStep = .doneButton
+            case .doneButton:
+                settings.hasSeenDoneButtonTip = true
+                activeTutorialStep = .historyButton
+            case .historyButton:
+                settings.hasSeenHistoryTip = true
+                activeTutorialStep = .settingsButton
+            case .settingsButton:
+                // Open settings and show PIN setup
+                showingSettings = true
+                activeTutorialStep = .pinSetupRow
+            case .pinSetupRow:
+                // Tutorial complete (celebration handled by onChange when PIN setup closes)
+                activeTutorialStep = nil
+            }
         }
     }
 
@@ -1078,11 +1450,8 @@ struct ContentView: View {
             .zIndex(activeTutorialStep == .customTimer ? 100 : 0)
             .overlay(alignment: .top) {
                 if activeTutorialStep == .customTimer {
-                    VStack(spacing: 4) {
-                        TutorialHandPointer(direction: .down)
-                        TutorialTooltip(text: "Make your own!", caretPosition: .top)
-                    }
-                    .offset(y: -75)
+                    TutorialHandPointer(direction: .down)
+                        .offset(y: -50)
                 }
             }
 
@@ -1190,31 +1559,28 @@ struct ContentView: View {
                             )
                         )
                         .shadow(color: Color.orange.opacity(0.5), radius: 10, x: 0, y: 5)
+                        .background(
+                            Group {
+                                if activeTutorialStep == .doneButton {
+                                    Circle()
+                                        .stroke(Color.green, lineWidth: 5)
+                                        .shadow(color: .green, radius: 16)
+                                        .shadow(color: .green.opacity(0.8), radius: 24)
+                                        .frame(width: 55, height: 55)
+                                        .scaleEffect(tutorialPulse ? 1.4 : 1.2)
+                                }
+                            }
+                        )
                     Text("Done!")
                         .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundColor(.white.opacity(0.9))
                 }
-                .background(
-                    Group {
-                        if activeTutorialStep == .doneButton {
-                            Circle()
-                                .stroke(Color.green, lineWidth: 5)
-                                .shadow(color: .green, radius: 16)
-                                .shadow(color: .green.opacity(0.8), radius: 24)
-                                .frame(width: 55, height: 55)
-                                .scaleEffect(tutorialPulse ? 1.4 : 1.2)
-                        }
-                    }
-                )
             }
             .zIndex(activeTutorialStep == .doneButton ? 100 : 0)
             .overlay(alignment: .top) {
                 if activeTutorialStep == .doneButton {
-                    VStack(spacing: 4) {
-                        TutorialHandPointer(direction: .down)
-                        TutorialTooltip(text: "Finish early", caretPosition: .top)
-                    }
-                    .offset(y: -70)
+                    TutorialHandPointer(direction: .down)
+                        .offset(y: -50)
                 }
             }
 
@@ -1345,11 +1711,10 @@ struct ContentView: View {
             activeTutorialStep: $activeTutorialStep,
             tutorialPulse: tutorialPulse,
             onPINSetupTap: {
-                // If in tutorial, complete it
+                // Track if we're coming from tutorial
                 if activeTutorialStep == .pinSetupRow {
-                    withAnimation {
-                        activeTutorialStep = nil
-                    }
+                    pinSetupFromTutorial = true
+                    activeTutorialStep = nil  // Clear tutorial step
                 }
                 showingSettings = false
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -2925,11 +3290,8 @@ struct SettingsSheetView: View {
                         .zIndex(isShowingPINTutorial ? 100 : 0)
                         .overlay(alignment: .top) {
                             if isShowingPINTutorial {
-                                VStack(spacing: 4) {
-                                    TutorialHandPointer(direction: .down)
-                                    TutorialTooltip(text: "Parent PIN", caretPosition: .top)
-                                }
-                                .offset(y: -70)
+                                TutorialHandPointer(direction: .down)
+                                    .offset(y: -50)
                             }
                         }
 
@@ -3219,17 +3581,148 @@ struct EnhancedSessionRow: View {
     }
 }
 
-// MARK: - Onboarding View
-struct OnboardingView: View {
+// MARK: - Onboarding Intro Page (for paged carousel)
+struct OnboardingIntroPage: View {
+    let iconName: String
+    let iconGradientColors: [Color]
+    let headline: String
+    let subheadline: String
+    let bulletPoints: [String]
+    let isAnimating: Bool
+
+    var body: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            // Animated icon with glow
+            ZStack {
+                // Glow circles
+                ForEach(0..<3) { index in
+                    Circle()
+                        .fill(Color.white.opacity(0.08))
+                        .frame(width: CGFloat(120 + index * 25), height: CGFloat(120 + index * 25))
+                        .scaleEffect(isAnimating ? 1.1 : 0.95)
+                        .animation(
+                            Animation.easeInOut(duration: 1.5)
+                                .repeatForever(autoreverses: true)
+                                .delay(Double(index) * 0.2),
+                            value: isAnimating
+                        )
+                }
+
+                Image(systemName: iconName)
+                    .font(.system(size: 70, weight: .medium))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: iconGradientColors,
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .shadow(color: iconGradientColors.first?.opacity(0.5) ?? .clear, radius: 20, x: 0, y: 10)
+                    .scaleEffect(isAnimating ? 1.1 : 0.95)
+                    .animation(
+                        Animation.easeInOut(duration: 1.2)
+                            .repeatForever(autoreverses: true),
+                        value: isAnimating
+                    )
+            }
+
+            // Headlines
+            VStack(spacing: 12) {
+                Text(headline)
+                    .font(.system(size: 36, weight: .black, design: .rounded))
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
+                    .multilineTextAlignment(.center)
+
+                Text(subheadline)
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white.opacity(0.8))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+            }
+
+            // Bullet points
+            VStack(alignment: .leading, spacing: 14) {
+                ForEach(bulletPoints, id: \.self) { point in
+                    HStack(alignment: .top, spacing: 12) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 22))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.green, .green.opacity(0.7)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+
+                        Text(point)
+                            .font(.system(size: 16, weight: .medium, design: .rounded))
+                            .foregroundColor(.white.opacity(0.9))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.white.opacity(0.1))
+            )
+            .padding(.horizontal, 24)
+
+            Spacer()
+            Spacer()
+        }
+    }
+}
+
+// MARK: - Paged Onboarding Container
+struct PagedOnboardingView: View {
     @Binding var isPresented: Bool
     @ObservedObject private var settings = TimerSettings.shared
-    @State private var childName: String = ""
+    @State private var currentPage: Int = 0
     @State private var isAnimating = false
-    @FocusState private var isTextFieldFocused: Bool
 
-    var isNameEmpty: Bool {
-        childName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
+    private let totalPages = 4
+
+    // Intro page data
+    private let introPages: [(icon: String, colors: [Color], headline: String, subheadline: String, bullets: [String])] = [
+        (
+            icon: "timer.circle.fill",
+            colors: [.yellow, .orange],
+            headline: "Time Made Fun!",
+            subheadline: "The colorful timer that makes every minute exciting",
+            bullets: [
+                "Watch vibrant colors change as time counts down",
+                "Celebrate completions with fun animations",
+                "Track your progress with colorful charts"
+            ]
+        ),
+        (
+            icon: "brain.head.profile",
+            colors: [.cyan, .blue],
+            headline: "Build Great Habits",
+            subheadline: "Time management designed for focus",
+            bullets: [
+                "Stay on task with clear visual time cues",
+                "Build daily routines that actually stick",
+                "Gentle reminders help you finish strong"
+            ]
+        ),
+        (
+            icon: "star.circle.fill",
+            colors: [.yellow, .orange],
+            headline: "Earn Stars Together",
+            subheadline: "Family teamwork makes time fly",
+            bullets: [
+                "Earn stars for completing tasks on time",
+                "Parents verify and award bonus stars",
+                "Build streaks and watch your stars grow"
+            ]
+        )
+    ]
 
     var body: some View {
         ZStack {
@@ -3248,160 +3741,261 @@ struct OnboardingView: View {
             // Floating decorations
             FloatingDecorationsView(isAnimating: isAnimating)
 
-            VStack(spacing: 30) {
-                Spacer()
-
-                // Welcome header
-                VStack(spacing: 16) {
-                    ZStack {
-                        // Glow circles
-                        ForEach(0..<3) { index in
-                            Circle()
-                                .fill(Color.white.opacity(0.08))
-                                .frame(width: CGFloat(140 + index * 25), height: CGFloat(140 + index * 25))
-                                .scaleEffect(isAnimating ? 1.1 : 0.95)
-                                .animation(
-                                    Animation.easeInOut(duration: 1.5)
-                                        .repeatForever(autoreverses: true)
-                                        .delay(Double(index) * 0.2),
-                                    value: isAnimating
+            VStack {
+                // Skip button (top-right)
+                HStack {
+                    Spacer()
+                    if currentPage < totalPages - 1 {
+                        Button(action: {
+                            withAnimation(.spring()) {
+                                currentPage = totalPages - 1
+                            }
+                        }) {
+                            Text("Skip")
+                                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                .foregroundColor(.white.opacity(0.7))
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(
+                                    Capsule()
+                                        .fill(Color.white.opacity(0.15))
                                 )
                         }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
 
-                        Image(systemName: "timer.circle.fill")
-                            .font(.system(size: 80, weight: .medium))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [.yellow, .orange],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
+                // Page content
+                TabView(selection: $currentPage) {
+                    // Intro pages (0, 1, 2)
+                    ForEach(0..<introPages.count, id: \.self) { index in
+                        OnboardingIntroPage(
+                            iconName: introPages[index].icon,
+                            iconGradientColors: introPages[index].colors,
+                            headline: introPages[index].headline,
+                            subheadline: introPages[index].subheadline,
+                            bulletPoints: introPages[index].bullets,
+                            isAnimating: isAnimating
+                        )
+                        .tag(index)
+                    }
+
+                    // Name input page (3)
+                    OnboardingNameInputView(isPresented: $isPresented)
+                        .tag(totalPages - 1)
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .animation(.spring(), value: currentPage)
+
+                // Navigation controls
+                VStack(spacing: 20) {
+                    // Page indicators
+                    HStack(spacing: 10) {
+                        ForEach(0..<totalPages, id: \.self) { index in
+                            Circle()
+                                .fill(index == currentPage ? Color.white : Color.white.opacity(0.4))
+                                .frame(width: index == currentPage ? 12 : 8, height: index == currentPage ? 12 : 8)
+                                .animation(.spring(), value: currentPage)
+                        }
+                    }
+
+                    // Next/Continue button (only on intro pages)
+                    if currentPage < totalPages - 1 {
+                        Button(action: {
+                            withAnimation(.spring()) {
+                                currentPage += 1
+                            }
+                        }) {
+                            HStack(spacing: 10) {
+                                Text(currentPage == totalPages - 2 ? "Get Started" : "Next")
+                                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                                Image(systemName: "arrow.right.circle.fill")
+                                    .font(.system(size: 20, weight: .bold))
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color.green, Color.green.opacity(0.7)],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        )
+                                    )
                             )
-                            .shadow(color: .orange.opacity(0.5), radius: 20, x: 0, y: 10)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(Color.white.opacity(0.5), lineWidth: 3)
+                            )
+                            .shadow(color: .green.opacity(0.4), radius: 15, x: 0, y: 8)
+                        }
+                        .padding(.horizontal, 24)
+                        .scaleEffect(isAnimating ? 1.02 : 0.98)
+                        .animation(
+                            Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true),
+                            value: isAnimating
+                        )
+                    }
+                }
+                .padding(.bottom, 40)
+            }
+        }
+        .onAppear {
+            isAnimating = true
+        }
+    }
+}
+
+// MARK: - Onboarding Name Input View (final page)
+struct OnboardingNameInputView: View {
+    @Binding var isPresented: Bool
+    @ObservedObject private var settings = TimerSettings.shared
+    @State private var childName: String = ""
+    @State private var isAnimating = false
+    @FocusState private var isTextFieldFocused: Bool
+
+    var isNameEmpty: Bool {
+        childName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var body: some View {
+        VStack(spacing: 30) {
+            Spacer()
+
+            // Welcome header
+            VStack(spacing: 16) {
+                ZStack {
+                    ForEach(0..<3) { index in
+                        Circle()
+                            .fill(Color.white.opacity(0.08))
+                            .frame(width: CGFloat(140 + index * 25), height: CGFloat(140 + index * 25))
                             .scaleEffect(isAnimating ? 1.1 : 0.95)
-                            .rotationEffect(.degrees(isAnimating ? 5 : -5))
                             .animation(
-                                Animation.easeInOut(duration: 1.2)
-                                    .repeatForever(autoreverses: true),
+                                Animation.easeInOut(duration: 1.5)
+                                    .repeatForever(autoreverses: true)
+                                    .delay(Double(index) * 0.2),
                                 value: isAnimating
                             )
                     }
 
-                    Text("Welcome!")
-                        .font(.system(size: 42, weight: .black, design: .rounded))
-                        .foregroundColor(.white)
-                        .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
-
-                    Text("Let's set up your timer")
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.8))
-                }
-
-                // Name input card
-                VStack(spacing: 20) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "person.circle.fill")
-                            .font(.system(size: 28))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [.cyan, .blue],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
+                    Image(systemName: "person.circle.fill")
+                        .font(.system(size: 70, weight: .medium))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.cyan, .blue],
+                                startPoint: .top,
+                                endPoint: .bottom
                             )
-                        Text("What's your name?")
-                            .font(.system(size: 22, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                    }
-
-                    TextField("Type your name...", text: $childName)
-                        .font(.system(size: 26, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.center)
-                        .padding(.vertical, 18)
-                        .padding(.horizontal, 24)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.white.opacity(0.15))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .stroke(
-                                            LinearGradient(
-                                                colors: [.white.opacity(0.6), .white.opacity(0.2)],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            ),
-                                            lineWidth: 2
-                                        )
-                                )
                         )
-                        .focused($isTextFieldFocused)
-                        .autocorrectionDisabled()
+                        .shadow(color: .blue.opacity(0.5), radius: 20, x: 0, y: 10)
+                        .scaleEffect(isAnimating ? 1.1 : 0.95)
+                        .animation(
+                            Animation.easeInOut(duration: 1.2)
+                                .repeatForever(autoreverses: true),
+                            value: isAnimating
+                        )
                 }
-                .padding(.horizontal, 28)
-                .padding(.vertical, 28)
-                .background(
-                    RoundedRectangle(cornerRadius: 28)
-                        .fill(Color.white.opacity(0.1))
-                )
-                .padding(.horizontal, 24)
 
-                // Let's Go button
-                Button(action: {
-                    let name = childName.trimmingCharacters(in: .whitespacesAndNewlines)
-                    settings.childName = name
-                    isPresented = false
-                }) {
-                    HStack(spacing: 12) {
-                        Text("Let's Go!")
-                            .font(.system(size: 26, weight: .black, design: .rounded))
-                        Image(systemName: "arrow.right.circle.fill")
-                            .font(.system(size: 26, weight: .bold))
-                    }
-                    .foregroundColor(isNameEmpty ? .white.opacity(0.4) : .white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 20)
+                Text("Almost There!")
+                    .font(.system(size: 36, weight: .black, design: .rounded))
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
+
+                Text("What should we call you?")
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white.opacity(0.8))
+            }
+
+            // Name input card
+            VStack(spacing: 20) {
+                TextField("Type your name...", text: $childName)
+                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.vertical, 18)
+                    .padding(.horizontal, 24)
                     .background(
-                        RoundedRectangle(cornerRadius: 22)
-                            .fill(
-                                LinearGradient(
-                                    colors: isNameEmpty
-                                        ? [Color.white.opacity(0.1), Color.white.opacity(0.1)]
-                                        : [Color.green, Color.green.opacity(0.7)],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color.white.opacity(0.15))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(
+                                        LinearGradient(
+                                            colors: [.white.opacity(0.6), .white.opacity(0.2)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 2
+                                    )
                             )
                     )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 22)
-                            .stroke(Color.white.opacity(isNameEmpty ? 0.2 : 0.5), lineWidth: 3)
-                    )
-                    .shadow(color: isNameEmpty ? .clear : .green.opacity(0.4), radius: 15, x: 0, y: 8)
-                }
-                .disabled(isNameEmpty)
-                .padding(.horizontal, 24)
-                .scaleEffect(isNameEmpty ? 1.0 : (isAnimating ? 1.02 : 0.98))
-                .animation(
-                    isNameEmpty ? nil : Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true),
-                    value: isAnimating
-                )
-
-                if isNameEmpty {
-                    HStack(spacing: 6) {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 16))
-                        Text("Enter your name to continue")
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    }
-                    .foregroundColor(.white.opacity(0.6))
-                }
-
-                Spacer()
-                Spacer()
+                    .focused($isTextFieldFocused)
+                    .autocorrectionDisabled()
             }
+            .padding(.horizontal, 28)
+            .padding(.vertical, 28)
+            .background(
+                RoundedRectangle(cornerRadius: 28)
+                    .fill(Color.white.opacity(0.1))
+            )
+            .padding(.horizontal, 24)
+
+            // Let's Go button
+            Button(action: {
+                let name = childName.trimmingCharacters(in: .whitespacesAndNewlines)
+                settings.childName = name
+                isPresented = false
+            }) {
+                HStack(spacing: 12) {
+                    Text("Let's Go!")
+                        .font(.system(size: 26, weight: .black, design: .rounded))
+                    Image(systemName: "arrow.right.circle.fill")
+                        .font(.system(size: 26, weight: .bold))
+                }
+                .foregroundColor(isNameEmpty ? .white.opacity(0.4) : .white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
+                .background(
+                    RoundedRectangle(cornerRadius: 22)
+                        .fill(
+                            LinearGradient(
+                                colors: isNameEmpty
+                                    ? [Color.white.opacity(0.1), Color.white.opacity(0.1)]
+                                    : [Color.green, Color.green.opacity(0.7)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22)
+                        .stroke(Color.white.opacity(isNameEmpty ? 0.2 : 0.5), lineWidth: 3)
+                )
+                .shadow(color: isNameEmpty ? .clear : .green.opacity(0.4), radius: 15, x: 0, y: 8)
+            }
+            .disabled(isNameEmpty)
+            .padding(.horizontal, 24)
+            .scaleEffect(isNameEmpty ? 1.0 : (isAnimating ? 1.02 : 0.98))
+            .animation(
+                isNameEmpty ? nil : Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true),
+                value: isAnimating
+            )
+
+            if isNameEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 16))
+                    Text("Enter your name to continue")
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                }
+                .foregroundColor(.white.opacity(0.6))
+            }
+
+            Spacer()
+            Spacer()
         }
         .onAppear {
             isAnimating = true

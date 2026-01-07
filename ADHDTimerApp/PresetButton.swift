@@ -206,11 +206,8 @@ struct RadialPresetButton: View {
             .zIndex(showMainButtonHighlight ? 100 : 0)
             .overlay(alignment: .top) {
                 if showMainButtonHighlight {
-                    VStack(spacing: 4) {
-                        TutorialHandPointer(direction: .down)
-                        TutorialTooltip(text: "Start a timer!", caretPosition: .top)
-                    }
-                    .offset(y: -70)
+                    TutorialHandPointer(direction: .down)
+                        .offset(y: -50)
                 }
             }
 
@@ -254,11 +251,8 @@ struct RadialPresetButton: View {
             .zIndex(showTutorialHighlight ? 100 : 0)
             .overlay(alignment: .top) {
                 if showTutorialHighlight {
-                    VStack(spacing: 4) {
-                        TutorialHandPointer(direction: .down)
-                        TutorialTooltip(text: "Edit the time", caretPosition: .top)
-                    }
-                    .offset(y: -65)
+                    TutorialHandPointer(direction: .down)
+                        .offset(y: -45)
                 }
             }
         }

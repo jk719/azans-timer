@@ -43,7 +43,7 @@ Two central `@MainActor @ObservableObject` singletons manage all app state:
 ### View Hierarchy
 
 ```
-ContentView (main orchestrator, ~3200 lines)
+ContentView (main orchestrator, ~3400 lines)
 ├── Header bar (history button, stars badge, streak badge, tutorial button, settings)
 ├── Timer display (CircularProgressView + time + encouraging message)
 ├── Preset buttons (radial layout around custom timer button)
