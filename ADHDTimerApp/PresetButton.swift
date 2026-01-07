@@ -193,8 +193,9 @@ struct RadialPresetButton: View {
                     Group {
                         if showMainButtonHighlight {
                             Circle()
-                                .stroke(Color.purple, lineWidth: 4)
-                                .shadow(color: .purple, radius: 12)
+                                .stroke(Color.purple, lineWidth: 5)
+                                .shadow(color: .purple, radius: 16)
+                                .shadow(color: .purple.opacity(0.8), radius: 24)
                                 .frame(width: 90, height: 90)
                                 .scaleEffect(mainPulseAnimation ? 1.3 : 1.15)
                         }
@@ -203,6 +204,15 @@ struct RadialPresetButton: View {
             }
             .buttonStyle(PressableButtonStyle(isPressed: $isPressed))
             .zIndex(showMainButtonHighlight ? 100 : 0)
+            .overlay(alignment: .top) {
+                if showMainButtonHighlight {
+                    VStack(spacing: 4) {
+                        TutorialHandPointer(direction: .down)
+                        TutorialTooltip(text: "Start a timer!", caretPosition: .top)
+                    }
+                    .offset(y: -70)
+                }
+            }
 
             // Time badge below the circle
             Button(action: {
@@ -232,8 +242,9 @@ struct RadialPresetButton: View {
                     Group {
                         if showTutorialHighlight {
                             Capsule()
-                                .stroke(Color.cyan, lineWidth: 3)
-                                .shadow(color: .cyan, radius: 10)
+                                .stroke(Color.cyan, lineWidth: 4)
+                                .shadow(color: .cyan, radius: 14)
+                                .shadow(color: .cyan.opacity(0.8), radius: 22)
                                 .scaleEffect(pulseAnimation ? 1.3 : 1.15)
                         }
                     }
@@ -241,6 +252,15 @@ struct RadialPresetButton: View {
             }
             .buttonStyle(PlainButtonStyle())
             .zIndex(showTutorialHighlight ? 100 : 0)
+            .overlay(alignment: .top) {
+                if showTutorialHighlight {
+                    VStack(spacing: 4) {
+                        TutorialHandPointer(direction: .down)
+                        TutorialTooltip(text: "Edit the time", caretPosition: .top)
+                    }
+                    .offset(y: -65)
+                }
+            }
         }
         .onAppear {
             if showTutorialHighlight {

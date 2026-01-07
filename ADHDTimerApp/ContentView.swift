@@ -21,6 +21,100 @@ enum ActivityType {
     case ipad, reading, shower, homework
 }
 
+// Bouncing hand pointer for tutorial - modern, clean UX
+struct TutorialHandPointer: View {
+    @State private var bounce = false
+    var direction: HandDirection = .down
+
+    enum HandDirection {
+        case down, up, left, right
+
+        var iconName: String {
+            switch self {
+            case .down: return "hand.point.down.fill"
+            case .up: return "hand.point.up.fill"
+            case .left: return "hand.point.left.fill"
+            case .right: return "hand.point.right.fill"
+            }
+        }
+
+        var bounceOffset: (x: CGFloat, y: CGFloat) {
+            switch self {
+            case .down: return (0, 8)
+            case .up: return (0, -8)
+            case .left: return (-8, 0)
+            case .right: return (8, 0)
+            }
+        }
+    }
+
+    var body: some View {
+        Image(systemName: direction.iconName)
+            .font(.system(size: 36, weight: .semibold))
+            .foregroundColor(.white)
+            .shadow(color: .black.opacity(0.4), radius: 4, x: 0, y: 2)
+            .shadow(color: .yellow.opacity(0.6), radius: 8)
+            .offset(
+                x: bounce ? direction.bounceOffset.x : -direction.bounceOffset.x,
+                y: bounce ? direction.bounceOffset.y : -direction.bounceOffset.y
+            )
+            .onAppear {
+                withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) {
+                    bounce = true
+                }
+            }
+    }
+}
+
+// Triangle shape for tooltip caret
+struct Triangle: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.closeSubpath()
+        return path
+    }
+}
+
+// Floating tooltip bubble for tutorial
+struct TutorialTooltip: View {
+    let text: String
+    var caretPosition: CaretPosition = .bottom
+
+    enum CaretPosition {
+        case top, bottom
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if caretPosition == .top {
+                Triangle()
+                    .fill(Color.black.opacity(0.85))
+                    .frame(width: 14, height: 8)
+                    .rotationEffect(.degrees(180))
+            }
+
+            Text(text)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundColor(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.black.opacity(0.85))
+                )
+
+            if caretPosition == .bottom {
+                Triangle()
+                    .fill(Color.black.opacity(0.85))
+                    .frame(width: 14, height: 8)
+            }
+        }
+    }
+}
+
 struct ContentView: View {
     @StateObject private var viewModel = TimerViewModel()
     @StateObject private var settings = TimerSettings.shared
@@ -81,13 +175,23 @@ struct ContentView: View {
                         Group {
                             if activeTutorialStep == .historyButton {
                                 Circle()
-                                    .stroke(Color.purple, lineWidth: 4)
-                                    .shadow(color: .purple, radius: 12)
+                                    .stroke(Color.purple, lineWidth: 5)
+                                    .shadow(color: .purple, radius: 16)
+                                    .shadow(color: .purple.opacity(0.8), radius: 24)
                                     .scaleEffect(tutorialPulse ? 1.3 : 1.15)
                             }
                         }
                     )
                     .zIndex(activeTutorialStep == .historyButton ? 100 : 0)
+                    .overlay(alignment: .bottom) {
+                        if activeTutorialStep == .historyButton {
+                            VStack(spacing: 4) {
+                                TutorialTooltip(text: "See progress", caretPosition: .bottom)
+                                TutorialHandPointer(direction: .up)
+                            }
+                            .offset(y: 65)
+                        }
+                    }
 
                     Spacer()
 
@@ -107,8 +211,9 @@ struct ContentView: View {
                         Group {
                             if activeTutorialStep == .starsBadge {
                                 Capsule()
-                                    .stroke(Color.yellow, lineWidth: 4)
-                                    .shadow(color: .yellow, radius: 12)
+                                    .stroke(Color.yellow, lineWidth: 5)
+                                    .shadow(color: .yellow, radius: 16)
+                                    .shadow(color: .yellow.opacity(0.8), radius: 24)
                                     .scaleEffect(tutorialPulse ? 1.25 : 1.1)
                             }
                         }
@@ -127,6 +232,15 @@ struct ContentView: View {
                         }
                     }
                     .zIndex(activeTutorialStep == .starsBadge ? 100 : 0)
+                    .overlay(alignment: .bottom) {
+                        if activeTutorialStep == .starsBadge {
+                            VStack(spacing: 4) {
+                                TutorialTooltip(text: "Your stars!", caretPosition: .bottom)
+                                TutorialHandPointer(direction: .up)
+                            }
+                            .offset(y: 60)
+                        }
+                    }
 
                     // Streak badge
                     if settings.currentStreak > 0 {
@@ -145,8 +259,9 @@ struct ContentView: View {
                             Group {
                                 if activeTutorialStep == .streakBadge {
                                     Capsule()
-                                        .stroke(Color.orange, lineWidth: 4)
-                                        .shadow(color: .orange, radius: 12)
+                                        .stroke(Color.orange, lineWidth: 5)
+                                        .shadow(color: .orange, radius: 16)
+                                        .shadow(color: .orange.opacity(0.8), radius: 24)
                                         .scaleEffect(tutorialPulse ? 1.25 : 1.1)
                                 }
                             }
@@ -159,6 +274,15 @@ struct ContentView: View {
                             }
                         }
                         .zIndex(activeTutorialStep == .streakBadge ? 100 : 0)
+                        .overlay(alignment: .bottom) {
+                            if activeTutorialStep == .streakBadge {
+                                VStack(spacing: 4) {
+                                    TutorialTooltip(text: "Daily streak!", caretPosition: .bottom)
+                                    TutorialHandPointer(direction: .up)
+                                }
+                                .offset(y: 60)
+                            }
+                        }
                     }
 
                     Spacer()
@@ -203,13 +327,23 @@ struct ContentView: View {
                         Group {
                             if activeTutorialStep == .settingsButton {
                                 Circle()
-                                    .stroke(Color.gray, lineWidth: 4)
-                                    .shadow(color: .gray, radius: 12)
+                                    .stroke(Color.gray, lineWidth: 5)
+                                    .shadow(color: .gray, radius: 16)
+                                    .shadow(color: .white.opacity(0.5), radius: 24)
                                     .scaleEffect(tutorialPulse ? 1.3 : 1.15)
                             }
                         }
                     )
                     .zIndex(activeTutorialStep == .settingsButton ? 100 : 0)
+                    .overlay(alignment: .bottom) {
+                        if activeTutorialStep == .settingsButton {
+                            VStack(spacing: 4) {
+                                TutorialTooltip(text: "Settings", caretPosition: .bottom)
+                                TutorialHandPointer(direction: .up)
+                            }
+                            .offset(y: 65)
+                        }
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
@@ -293,83 +427,27 @@ struct ContentView: View {
                 )
             }
 
-            // Interactive Tutorial Overlay (not shown for pinSetupRow - that's in Settings)
-            if let step = activeTutorialStep, step != .pinSetupRow {
-                let position = tutorialMessagePosition(for: step)
-
-                // Dark background (visual only - doesn't block taps)
-                Rectangle()
-                    .fill(Color.black.opacity(0.75))
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
-
-                // Instruction box with dynamic positioning (visual only)
+            // Skip Tutorial button - subtle, always at bottom during tutorial
+            if activeTutorialStep != nil && activeTutorialStep != .pinSetupRow {
                 VStack {
-                    if position == .bottom {
-                        Spacer()
-                    }
-
-                    VStack(spacing: 12) {
-                        Text(tutorialInstruction(for: step))
-                            .font(.system(size: 22, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
-                            .multilineTextAlignment(.center)
-
-                        HStack(spacing: 8) {
-                            Image(systemName: "hand.tap.fill")
-                                .foregroundColor(tutorialHighlightColor(for: step))
-                            Text("Tap the highlighted button!")
-                                .foregroundColor(tutorialHighlightColor(for: step))
-                        }
-                        .font(.system(size: 16, weight: .semibold))
-                    }
-                    .padding(24)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(Color.black.opacity(0.9))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .stroke(tutorialHighlightColor(for: step), lineWidth: 2)
-                            )
-                    )
-                    .padding(.horizontal, 24)
-
-                    if position == .top {
-                        Spacer()
-                    }
-                }
-                .padding(.top, position == .top ? 120 : 0)
-                .padding(.bottom, position == .bottom ? 100 : 0)
-                .allowsHitTesting(false)  // Let taps go through to buttons
-
-                // Skip Tutorial button (tappable)
-                VStack {
-                    if position == .top {
-                        Spacer()
-                    }
-
+                    Spacer()
                     Button(action: {
                         withAnimation {
                             activeTutorialStep = nil
                         }
                     }) {
-                        Text("Skip Tutorial")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white.opacity(0.7))
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
+                        Text("Skip")
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundColor(.white.opacity(0.5))
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 6)
                             .background(
                                 Capsule()
-                                    .fill(Color.white.opacity(0.15))
+                                    .fill(Color.white.opacity(0.1))
                             )
                     }
-
-                    if position == .bottom {
-                        Spacer()
-                    }
                 }
-                .padding(.top, position == .top ? 0 : 20)
-                .padding(.bottom, position == .bottom ? 40 : 20)
+                .padding(.bottom, 30)
             }
         }
         .sheet(isPresented: $viewModel.showCustomPicker) {
@@ -988,8 +1066,9 @@ struct ContentView: View {
                     Group {
                         if activeTutorialStep == .customTimer {
                             Circle()
-                                .stroke(Color.pink, lineWidth: 4)
-                                .shadow(color: .pink, radius: 12)
+                                .stroke(Color.pink, lineWidth: 5)
+                                .shadow(color: .pink, radius: 16)
+                                .shadow(color: .pink.opacity(0.8), radius: 24)
                                 .frame(width: 100, height: 100)
                                 .scaleEffect(tutorialPulse ? 1.3 : 1.15)
                         }
@@ -997,6 +1076,15 @@ struct ContentView: View {
                 )
             }
             .zIndex(activeTutorialStep == .customTimer ? 100 : 0)
+            .overlay(alignment: .top) {
+                if activeTutorialStep == .customTimer {
+                    VStack(spacing: 4) {
+                        TutorialHandPointer(direction: .down)
+                        TutorialTooltip(text: "Make your own!", caretPosition: .top)
+                    }
+                    .offset(y: -75)
+                }
+            }
 
             // Radial preset buttons
             ForEach(Array(presets.enumerated()), id: \.offset) { index, preset in
@@ -1110,8 +1198,9 @@ struct ContentView: View {
                     Group {
                         if activeTutorialStep == .doneButton {
                             Circle()
-                                .stroke(Color.green, lineWidth: 4)
-                                .shadow(color: .green, radius: 12)
+                                .stroke(Color.green, lineWidth: 5)
+                                .shadow(color: .green, radius: 16)
+                                .shadow(color: .green.opacity(0.8), radius: 24)
                                 .frame(width: 55, height: 55)
                                 .scaleEffect(tutorialPulse ? 1.4 : 1.2)
                         }
@@ -1119,6 +1208,15 @@ struct ContentView: View {
                 )
             }
             .zIndex(activeTutorialStep == .doneButton ? 100 : 0)
+            .overlay(alignment: .top) {
+                if activeTutorialStep == .doneButton {
+                    VStack(spacing: 4) {
+                        TutorialHandPointer(direction: .down)
+                        TutorialTooltip(text: "Finish early", caretPosition: .top)
+                    }
+                    .offset(y: -70)
+                }
+            }
 
             // Stop/Cancel button
             Button(action: {
@@ -2825,6 +2923,15 @@ struct SettingsSheetView: View {
                         )
                         .padding(.horizontal, 20)
                         .zIndex(isShowingPINTutorial ? 100 : 0)
+                        .overlay(alignment: .top) {
+                            if isShowingPINTutorial {
+                                VStack(spacing: 4) {
+                                    TutorialHandPointer(direction: .down)
+                                    TutorialTooltip(text: "Parent PIN", caretPosition: .top)
+                                }
+                                .offset(y: -70)
+                            }
+                        }
 
 
                         Spacer(minLength: 40)
@@ -2832,72 +2939,23 @@ struct SettingsSheetView: View {
                     .padding(.top, 10)
                 }
 
-                // Tutorial overlay for PIN step
+                // Skip button for PIN tutorial - subtle, at bottom
                 if isShowingPINTutorial {
-                    // Dark background (doesn't block taps - allows user to tap PIN row)
-                    Rectangle()
-                        .fill(Color.black.opacity(0.65))
-                        .ignoresSafeArea()
-                        .allowsHitTesting(false)
-
-                    // Message content at TOP (visual only - doesn't block taps)
-                    VStack {
-                        VStack(spacing: 12) {
-                            VStack(spacing: 6) {
-                                Text("Ask a parent to set up a PIN!")
-                                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                                    .foregroundColor(.white)
-                                    .multilineTextAlignment(.center)
-
-                                Text("They'll verify tasks and award bonus stars!")
-                                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                                    .foregroundColor(.white.opacity(0.8))
-                                    .multilineTextAlignment(.center)
-                            }
-
-                            HStack(spacing: 6) {
-                                Image(systemName: "hand.point.down.fill")
-                                    .foregroundColor(.orange)
-                                Text("Tap the orange card below!")
-                                    .foregroundColor(.orange)
-                            }
-                            .font(.system(size: 13, weight: .semibold))
-                        }
-                        .padding(20)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.black.opacity(0.85))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(Color.orange.opacity(0.5), lineWidth: 2)
-                                )
-                        )
-                        .padding(.horizontal, 24)
-                        .padding(.top, 100)
-
-                        Spacer()
-                    }
-                    .allowsHitTesting(false)  // Let taps pass through to PIN card
-
-                    // Skip button (tappable) - positioned below message box
                     VStack {
                         Spacer()
-                            .frame(height: 215)  // Position below the message box
-
                         Button(action: onSkipTutorial) {
-                            Text("Skip Tutorial")
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                .foregroundColor(.white.opacity(0.7))
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
+                            Text("Skip")
+                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .foregroundColor(.white.opacity(0.5))
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 6)
                                 .background(
                                     Capsule()
-                                        .fill(Color.white.opacity(0.15))
+                                        .fill(Color.white.opacity(0.1))
                                 )
                         }
-
-                        Spacer()
                     }
+                    .padding(.bottom, 30)
                 }
             }
             .onAppear { isAnimating = true }
